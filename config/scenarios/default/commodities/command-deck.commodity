@@ -1,0 +1,8 @@
+class = starship-part
+name = "Command Deck"
+mass = 500
+command = true
+component = { computer = 10
+              pvc = 100
+              steel = 10
+            }

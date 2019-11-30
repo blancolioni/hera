@@ -1,0 +1,16 @@
+default-terrain = grass
+terrain = {
+   desert = 10%
+   forest = 20%
+   grass = 20%
+   hill = 20%
+   jungle = 20%
+   marsh = 20%
+   swamp = 20%
+   mountain = 20%
+   plain = 20%
+   tundra = 20%
+   volcanic = 20%
+   water = 40%
+   ice = 10%
+}

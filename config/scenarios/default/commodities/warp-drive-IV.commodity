@@ -1,0 +1,8 @@
+class = starship-part
+name = "Warp Drive IV"
+mass = 400
+warp = 20
+component = { warp-core = 7
+              cpu = 5
+              electronic-component = 5
+            }

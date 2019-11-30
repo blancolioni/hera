@@ -1,0 +1,8 @@
+class = industrial-good
+name = "Solar Cell"
+mass = 10
+engine = true
+component = { electronic-component = 1
+              glass = 4
+              bronze = 1
+            }

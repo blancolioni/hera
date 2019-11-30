@@ -1,0 +1,7 @@
+class = starship-part
+name = "Impulse Drive"
+mass = 25
+thrust = 1500
+component = { impulse-core = 1
+              cpu = 1
+            }

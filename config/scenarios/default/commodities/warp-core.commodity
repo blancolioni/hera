@@ -1,0 +1,10 @@
+class = industrial-good
+name = "Warp Core"
+mass = 50
+engine = true
+component = { nuclear-core = 1
+              steel = 2
+              electronic-component = 2
+              noblegas = 5
+              datastorage = 1
+            }

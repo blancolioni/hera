@@ -1,0 +1,8 @@
+class = starship-part
+name = "Light Cargo Hold"
+mass = 250
+consumer-capacity = 100
+component = { aluminium = 100
+              pvc = 100
+              electronic-component = 10
+            }

@@ -1,0 +1,8 @@
+class = starship-part
+name = "Reinforced Cargo Hold"
+mass = 250
+industrial-capacity = 100
+component = { steel = 15
+              pvc = 75
+              electronic-component = 10
+            }

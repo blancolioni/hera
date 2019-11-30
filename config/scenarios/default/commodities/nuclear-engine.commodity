@@ -1,0 +1,8 @@
+class = starship-part
+name = "Nuclear Engine"
+mass = 25
+thrust = 750
+component = { nuclear-core = 1
+              cpu = 1
+              steel = 2
+            }

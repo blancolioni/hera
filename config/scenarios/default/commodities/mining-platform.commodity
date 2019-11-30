@@ -1,0 +1,8 @@
+class = starship-part
+name = "Mining Platform"
+mass = 500
+mining = asteroid
+component = { steel = 50
+              electronic-component = 10
+              explosives = 200
+            }

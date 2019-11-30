@@ -1,0 +1,8 @@
+class = starship-part
+name = "Living Quarters"
+mass = 250
+organics-capacity = 100
+component = { aluminium = 100
+              pvc = 100
+              electronic-component = 10
+            }

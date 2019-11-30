@@ -1,0 +1,9 @@
+class = starship-part
+name = Probe
+mass = 100
+system-probe = true
+planet-probe = true
+component = { computer = 2
+              electronic-component = 8
+              datastorage = 4
+            }

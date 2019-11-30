@@ -1,0 +1,8 @@
+class = starship-part
+name = "Gas Field Collector"
+mass = 500
+mining = gasfield
+component = { aluminium = 50
+              electronic-component = 10
+              glass = 200
+            }

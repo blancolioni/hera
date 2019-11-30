@@ -1,0 +1,40 @@
+project_name = Hera
+source_dir = src
+source_dir = src/accounts
+source_dir = src/climate
+source_dir = src/colonies
+source_dir = src/commands
+source_dir = src/commodities
+source_dir = src/corporations
+source_dir = src/driver
+source_dir = src/economy
+source_dir = src/facilities
+source_dir = src/galaxy
+source_dir = src/installations
+source_dir = src/library
+source_dir = src/managers
+source_dir = src/markets
+source_dir = src/objects
+source_dir = src/planets
+source_dir = src/pops
+source_dir = src/scenarios
+source_dir = src/sessions
+source_dir = src/ships
+source_dir = src/stars
+source_dir = src/systems
+source_dir = src/terrain
+source_dir = src/ui
+source_dir = src/ui/aws
+source_dir = src/ui/gtk
+source_dir = src/ui/models
+source_dir = src/worlds
+source_dir = src/updates-real-time
+depend = { project = Tropos version = any }
+depend = { project = Wlib version = any }
+depend = { project = lui version = any }
+depend = { project = aws external = yes }
+depend = { project = GtkAda external = yes }
+main_unit = hera-driver
+exec_name = hera
+config_dir = config
+path_unit = { unit = Hera.Paths path = src/driver/hera-paths.ads }

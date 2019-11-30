@@ -1,0 +1,158 @@
+.wrapper {
+    display: flex;
+    width: 100%;
+    align-items: stretch;
+}
+
+#outline {
+    min-width: 250px;
+    max-width: 250px;
+    min-height: 100vh;
+    transition: all 0.3s;
+}
+
+#outline.initial {
+    margin-left: -250px;
+}
+
+.sidebar-header {
+    padding: 20px;
+}
+.app-content {
+    width: 100%;
+    padding: 20px;
+    min-height: 100vh;
+    display: flex;
+    flex-flow: column;
+}
+
+.toggle-icon {
+    display: inline-block; 
+}
+.toggle-icon-symbol {
+    width: 2rem;
+    height: 2rem;
+    text-align: center;
+    line-height: 2rem; 
+}
+  
+.tree-item-group {
+    list-style-type: none;
+    padding-left: 0;
+    border-top: 1px solid #ccc;
+    text-align: left;
+    /* width: 100vw;  */
+}
+  
+.tree-item {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    /* color: #333; */
+    background: none;
+    /* border-bottom: 1px solid #ccc; */
+    box-shadow: none;
+    z-index: unset;
+    position: relative;
+ }
+
+.tree-item--active {
+    color: white;
+    background: #179ed3;
+    border-bottom: none; 
+}
+
+.tree-item--focused {
+      box-shadow: 0 0 5px 0 #222;
+      z-index: 999; }
+  
+.search {
+    padding: 1rem 1.5rem;
+    border: none;
+    width: 100%; }
+  
+.concorde-shell-output {
+    min-height: 200px;
+    height: 100%;
+    width: 100%;
+    border: 1px solid black;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.concorde-shell-textarea {
+    height: 100%;
+    width: 100%;
+}
+
+.navbar-dark {
+    color:white;
+  }
+
+.concorde-dashboard-grid {
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-columns: repeat(12,1fr);
+    grid-template-rows: repeat(12,1fr);
+}
+
+.concorde-dashboard-item {
+    background-color: white;
+    color: black;
+    width: 100%;
+    height: 100%;
+}
+
+.concorde-dashboard-titlebar {
+    background-color: darkblue;
+    color:white;
+}
+
+.concorde-dashboard-cell {
+    overflow-y: auto;
+}
+
+.concorde-shell-table td {
+    padding: 0px;
+}
+
+.concorde-sortable-table thead > tr {
+    cursor: pointer;
+}
+
+.concorde-titlebar-right {
+    float: right;
+}
+
+.concorde-titlebar-button {
+    background-color:#a73f2d;
+    border: 1px solid black;
+	display:inline-block;
+	cursor:pointer;
+    color:#ffffff;
+    font-size: x-small;
+	text-decoration:none;
+	text-shadow:0px 1px 0px #ffffff;
+}
+.concorde-titlebar-button:hover {
+	background:linear-gradient(to bottom, #e9e9e9 5%, #f9f9f9 100%);
+	background-color:#e9e9e9;
+}
+.concorde-titlebar-button:active {
+	position:relative;
+	top:1px;
+}
+
+.standard-star-label {
+    background-color: #00000080;
+    font-size: x-small;
+    color: lightcyan;
+}
+
+.colonized-star-label {
+    background-color: #00000080;
+    font-size: small;
+    color: limegreen;
+}
+
+.harriet-model3d {
+    position: relative;
+}

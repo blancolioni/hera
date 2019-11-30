@@ -1,0 +1,7 @@
+scenario = default
+language = en
+randomise = no
+random-seed = 0
+batch-mode = no
+update-count = 100
+create = no

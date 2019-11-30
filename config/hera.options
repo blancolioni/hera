@@ -1,0 +1,20 @@
+package Hera.Options is
+
+   Scenario                : String := "default";
+   Language                : String := "en";
+   
+   Randomise               : Boolean;
+   Random_Seed             : Natural;
+   Batch_Mode              : Boolean;
+   Update_Count            : Natural;
+
+   Create                  : Boolean;
+   
+   Log_Folder              : String := "log";
+   
+   Import_Properties       : Boolean := False;
+   Work_Task_Count         : Positive := 1;
+   
+   Player_Corporation      : String;
+   
+end Hera.Options;

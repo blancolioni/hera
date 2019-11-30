@@ -1,0 +1,8 @@
+class = starship-part
+name = Tanker
+mass = 250
+liquidgas-capacity = 100
+component = { steel = 20
+              glass = 20
+              electronic-component = 5
+            }

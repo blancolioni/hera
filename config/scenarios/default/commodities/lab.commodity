@@ -1,0 +1,11 @@
+class = starship-part
+name = "Science Lab"
+mass = 250
+bio-lab = true
+physics-lab = true
+geo-lab = true
+component = { computer = 5
+              electronic-component = 10
+              pvc = 50
+              datastorage = 10
+            }

@@ -1,0 +1,8 @@
+class = starship-part
+name = "Crew Deck"
+mass = 250
+crew = true
+component = { computer = 2
+              pvc = 100
+              steel = 8
+            }

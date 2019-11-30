@@ -1,0 +1,8 @@
+class = starship-part
+name = "Heavy Cargo Hold"
+mass = 500
+modules-capacity = 100
+component = { steel = 45
+              cement = 45
+              electronic-component = 10
+            }

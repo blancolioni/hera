@@ -1,0 +1,9 @@
+class = starship-part
+name = Scanner
+mass = 50
+short-scan = true
+long-scan = 25
+component = { computer = 1
+              electronic-component = 4
+              datastorage = 2
+            }

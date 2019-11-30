@@ -1,0 +1,9 @@
+class = industrial-good
+name = "Nuclear Core"
+mass = 10
+engine = true
+component = { electronic-component = 1
+              fissile = 1
+              steel = 1
+              cement = 2
+            }

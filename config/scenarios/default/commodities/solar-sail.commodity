@@ -1,0 +1,8 @@
+class = starship-part
+name = "Solar Sail"
+mass = 25
+thrust = 1000
+component = { solar-cell = 1
+              cpu = 1
+              aluminium = 10
+            }
