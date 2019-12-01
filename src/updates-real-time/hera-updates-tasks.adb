@@ -50,6 +50,7 @@ package body Hera.Updates.Tasks is
             for Update of Dispatch_List loop
                begin
                   Update.Activate;
+                  Hera.Objects.Apply_Updates;
                exception
                   when E : others =>
                      Ada.Text_IO.Put_Line
@@ -63,7 +64,6 @@ package body Hera.Updates.Tasks is
                         & Ada.Exceptions.Exception_Message (E));
                end;
             end loop;
-            Hera.Objects.Apply_Updates;
          or
             accept Stop;
             exit;
