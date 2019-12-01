@@ -104,7 +104,14 @@ package Hera.Commodities is
      (From      : Has_Stock_Interface;
       Commodity : Commodity_Type)
       return Stock_Entry
-      is abstract;
+      is abstract
+     with Post'Class =>
+       (Hera.Quantities."=" (Get_Stock'Result.Quantity, Hera.Quantities.Zero)
+        and then Hera.Money."=" (Get_Stock'Result.Value, Hera.Money.Zero))
+       or else (Hera.Quantities.">"
+                (Get_Stock'Result.Quantity, Hera.Quantities.Zero)
+                and then Hera.Money.">"
+                  (Get_Stock'Result.Value, Hera.Money.Zero));
 
    procedure Set_Stock
      (To        : Has_Stock_Interface;
@@ -156,7 +163,8 @@ package Hera.Commodities is
      (Has_Stock : Has_Stock_Interface'Class;
       Commodity : Commodity_Type;
       Quantity  : Hera.Quantities.Quantity_Type;
-      Value     : out Hera.Money.Money_Type);
+      Value     : out Hera.Money.Money_Type)
+     with Post => Hera.Money.">=" (Value, Hera.Money.Zero);
 
    procedure Remove
      (Has_Stock : Has_Stock_Interface'Class;

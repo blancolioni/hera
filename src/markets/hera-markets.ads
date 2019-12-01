@@ -89,6 +89,23 @@ package Hera.Markets is
       Quantity  : Hera.Quantities.Quantity_Type;
       Price     : Hera.Money.Price_Type);
 
+   function Total_Available
+     (Market    : Root_Market_Type'Class;
+      Commodity : Hera.Commodities.Commodity_Type)
+      return Hera.Quantities.Quantity_Type;
+
+   function Available
+     (Market    : Root_Market_Type'Class;
+      Commodity : Hera.Commodities.Commodity_Type;
+      Budget    : Hera.Money.Money_Type)
+      return Hera.Quantities.Quantity_Type;
+
+   function Current_Cost
+     (Market    : Root_Market_Type'Class;
+      Commodity : Hera.Commodities.Commodity_Type;
+      Quantity  : Hera.Quantities.Quantity_Type)
+      return Hera.Money.Money_Type;
+
    procedure Clear_Transients
      (Market : Root_Market_Type'Class);
 

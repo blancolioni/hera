@@ -97,6 +97,12 @@ package Hera.Colonies is
      (Process : not null access
         procedure (Colony : Colony_Type));
 
+   procedure Iterate_Planet_Colonies
+     (Planet : not null access constant
+        Hera.Planets.Root_Planet_Type'Class;
+      Process : not null access
+        procedure (Colony : Colony_Type));
+
 private
 
    type Employer_Access is access constant Employer_Interface'Class;

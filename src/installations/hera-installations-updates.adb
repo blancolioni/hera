@@ -60,6 +60,7 @@ package body Hera.Installations.Updates is
          Queue    => Queue);
 
       if Queue.Changed then
+         Installation.Log ("updating queue");
          Installation.Add_Update
            (Queue_Update_Type'
               (Hera.Objects.Root_Update_Type with

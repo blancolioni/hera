@@ -131,15 +131,6 @@ package body Hera.Facilities.Updates is
          is
             use type Hera.Quantities.Quantity_Type;
          begin
-            Owner.Log
-              (Facility.Tag
-               & " produces "
-               & Hera.Quantities.Show (Quantity)
-               & " "
-               & Commodity.Tag
-               & " complexity "
-               & Hera.Quantities.Show (Commodity.Complexity));
-
             Production.Append ((Commodity, Quantity, Cost));
             Total_Quantity := Total_Quantity + Quantity;
          end On_Production;
@@ -215,6 +206,19 @@ package body Hera.Facilities.Updates is
                             / Hera.Quantities.To_Real (Total_Quantity))
                       + Item.Value;
                begin
+                  Owner.Log
+                    (Facility.Tag
+                     & " produced "
+                     & Hera.Quantities.Show (Item.Quantity)
+                     & " "
+                     & Item.Commodity.Tag
+                     & " for "
+                     & Hera.Money.Show (This_Cost)
+                     & " ("
+                     & Hera.Money.Show
+                       (Hera.Money.Price (This_Cost, Item.Quantity))
+                     & " ea)");
+
                   Colony.Warehouse (Owner).Add
                     (Item.Commodity, Item.Quantity, This_Cost);
                   Colony.Planet.On_Production
@@ -243,7 +247,8 @@ package body Hera.Facilities.Updates is
    is
       use Hera.Quantities;
       Capacity    : Quantity_Type :=
-        Scale (Facility.Capacity, Efficiency);
+        Scale (Facility.Capacity, 10.0 * Efficiency);
+      Input_Cost  : Hera.Money.Money_Type := Hera.Money.Zero;
 
       function Consume_Components
         (Commodity : Hera.Commodities.Commodity_Type;
@@ -261,8 +266,6 @@ package body Hera.Facilities.Updates is
       is
          Max : Quantity_Type := Quantity;
       begin
-         Facility.Log ("queued: " & Show (Quantity) & " " & Commodity.Tag);
-
          for Component of Commodity.Components loop
             declare
                Require : constant Quantity_Type :=
@@ -299,14 +302,27 @@ package body Hera.Facilities.Updates is
                   New_Value : constant Hera.Money.Money_Type :=
                     Hera.Money.Total (Hera.Money.Price (Old_Value, Have),
                                       Have - Require);
+                  Consumed_Value : constant Money_Type :=
+                                     Old_Value - New_Value;
+                  Consumed       : constant Quantity_Type :=
+                                     (if New_Value = Zero
+                                      then Have
+                                      else Require);
                begin
-                  Facility.Log ("consume " & Show (Require) & " of "
-                                & Show (Have) & " " & Component.Tag);
+                  Facility.Log ("consume " & Image (Consumed) & " of "
+                                & Image (Have) & " " & Component.Tag
+                                & "; old value "
+                                & Hera.Money.Image (Old_Value)
+                                & "; new value "
+                                & Hera.Money.Image (New_Value)
+                                & " consumed value "
+                                & Hera.Money.Image (Consumed_Value));
 
-                  pragma Assert (Require <= Have);
-                  Stock.Update_Stock (Component, (Have - Require, New_Value));
+                  pragma Assert (Consumed <= Have);
+                  Stock.Update_Stock (Component, (Have - Consumed, New_Value));
                   Planet.On_Consumption
-                    (Component, Require, Old_Value - New_Value);
+                    (Component, Consumed, Old_Value - New_Value);
+                  Input_Cost := Input_Cost + Consumed_Value;
                end;
             end loop;
          end if;
@@ -336,26 +352,41 @@ package body Hera.Facilities.Updates is
                  Min (First_Item.Quantity * Complexity,
                       Capacity);
                Max_Quantity     : constant Quantity_Type :=
-                 Complexity_Limit / Complexity;
-               Quantity         : constant Quantity_Type :=
-                 (if Max_Quantity = Zero
-                  then Zero
-                  else Consume_Components
-                    (First_Item.Commodity, Max_Quantity));
+                                    (if Capacity < Complexity
+                                     then Zero
+                                     else Complexity_Limit / Complexity);
             begin
-               if Quantity > Zero then
-                  Changed := True;
-                  On_Production (First_Item.Commodity,
-                                 Quantity, Hera.Money.Zero);
-                  Capacity := Capacity - Quantity * Complexity;
-               end if;
 
-               if Quantity < First_Item.Quantity then
-                  New_Queue.Append
-                    ((Commodity, First_Item.Quantity - Quantity));
-               end if;
+               Facility.Log
+                 (Commodity.Tag
+                  & ": queued " & Show (First_Item.Quantity)
+                  & "; complexity " & Show (Complexity * First_Item.Quantity)
+                  & "; limit " & Show (Capacity)
+                  & "; max " & Show (Max_Quantity));
 
-               Queue.Delete_First;
+               declare
+                  Quantity : constant Quantity_Type :=
+                               (if Max_Quantity = Zero
+                                then Zero
+                                else Consume_Components
+                                  (First_Item.Commodity, Max_Quantity));
+               begin
+                  if Quantity > Zero then
+                     Changed := True;
+                     On_Production (First_Item.Commodity,
+                                    Quantity, Input_Cost);
+                     Input_Cost := Hera.Money.Zero;
+                     Capacity :=
+                       Capacity - Min (Capacity, Quantity * Complexity);
+                  end if;
+
+                  if Quantity < First_Item.Quantity then
+                     New_Queue.Append
+                       ((Commodity, First_Item.Quantity - Quantity));
+                  end if;
+
+                  Queue.Delete_First;
+               end;
             end;
          end if;
       end loop;

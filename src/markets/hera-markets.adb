@@ -7,7 +7,7 @@ package body Hera.Markets is
    Market_Version : constant Hera.Objects.Object_Version := "0.0.1";
    Trade_Node_Version : constant Hera.Objects.Object_Version := "0.0.1";
 
-   Log_Market : constant Boolean := False;
+   Log_Market : constant Boolean := True;
 
    package Trade_Center_Lists is
      new Ada.Containers.Doubly_Linked_Lists (Trade_Center_Type);
@@ -58,6 +58,60 @@ package body Hera.Markets is
        & Hera.Quantities.Show (Update.Quantity)
        & " " & Update.Commodity.Tag
        & " for " & Hera.Money.Show (Update.Budget));
+
+   ---------------
+   -- Available --
+   ---------------
+
+   function Available
+     (Market    : Root_Market_Type'Class;
+      Commodity : Hera.Commodities.Commodity_Type;
+      Budget    : Hera.Money.Money_Type)
+      return Hera.Quantities.Quantity_Type
+   is
+      use Hera.Money;
+      use Hera.Quantities;
+      Remaining : Money_Type := Budget;
+      Total     : Quantity_Type := Zero;
+
+      procedure Add_Quantity
+        (Price : Hera.Money.Price_Type;
+         Item  : Sell_Offer_Record);
+
+      ------------------
+      -- Add_Quantity --
+      ------------------
+
+      procedure Add_Quantity
+        (Price : Hera.Money.Price_Type;
+         Item  : Sell_Offer_Record)
+      is
+         pragma Unreferenced (Price);
+      begin
+         if Remaining > Zero then
+            declare
+               This_Total : constant Money_Type :=
+                              Hera.Money.Total (Item.Price, Item.Quantity);
+            begin
+               if This_Total <= Remaining then
+                  Total := Total + Item.Quantity;
+                  Remaining := Remaining - This_Total;
+               else
+                  Total := Total
+                    + Scale (Item.Quantity,
+                             To_Real (Remaining) / To_Real (This_Total));
+                  Remaining := Zero;
+               end if;
+            end;
+         end if;
+      end Add_Quantity;
+
+   begin
+      if Market.Sell_Offers.Contains (Commodity) then
+         Market.Sell_Offers.Element (Commodity).Iterate (Add_Quantity'Access);
+      end if;
+      return Total;
+   end Available;
 
    ---------
    -- Buy --
@@ -113,6 +167,45 @@ package body Hera.Markets is
       return Market_Type
         (Market.New_Object (Market_Version));
    end Create_Market;
+
+   ------------------
+   -- Current_Cost --
+   ------------------
+
+   function Current_Cost
+     (Market    : Root_Market_Type'Class;
+      Commodity : Hera.Commodities.Commodity_Type;
+      Quantity  : Hera.Quantities.Quantity_Type)
+      return Hera.Money.Money_Type
+   is
+      use Hera.Money;
+      use Hera.Quantities;
+      Remaining : Quantity_Type := Quantity;
+      Total     : Money_Type := Zero;
+
+      procedure Add_Cost
+        (Price : Hera.Money.Price_Type;
+         Item  : Sell_Offer_Record);
+
+      procedure Add_Cost
+        (Price : Hera.Money.Price_Type;
+         Item  : Sell_Offer_Record)
+      is
+         pragma Unreferenced (Price);
+      begin
+         if Remaining > Zero then
+            Total := Total +
+              Hera.Money.Total (Item.Price, Min (Item.Quantity, Remaining));
+            Remaining := Remaining - Min (Item.Quantity, Remaining);
+         end if;
+      end Add_Cost;
+
+   begin
+      if Market.Sell_Offers.Contains (Commodity) then
+         Market.Sell_Offers.Element (Commodity).Iterate (Add_Cost'Access);
+      end if;
+      return Total;
+   end Current_Cost;
 
    -------------
    -- Execute --
@@ -221,6 +314,11 @@ package body Hera.Markets is
          end loop;
 
          if Total_Bought > Zero then
+            Market.Log (Update.Trader.Name & " buys "
+                        & Hera.Quantities.Show (Total_Bought)
+                        & " " & Update.Commodity.Tag
+                        & " for "
+                        & Hera.Money.Show (Total_Paid));
             Update.Stock.Add (Update.Commodity, Total_Bought, Total_Paid);
             Update.Trader.On_Buy
               (Commodity  => Update.Commodity,
@@ -361,6 +459,42 @@ package body Hera.Markets is
    begin
       To.Stock.Set_Stock (Commodity, Stock);
    end Set_Stock;
+
+   ---------------------
+   -- Total_Available --
+   ---------------------
+
+   function Total_Available
+     (Market    : Root_Market_Type'Class;
+      Commodity : Hera.Commodities.Commodity_Type)
+      return Hera.Quantities.Quantity_Type
+   is
+      use Hera.Quantities;
+      Total : Quantity_Type := Zero;
+
+      procedure Add_Quantity
+        (Price : Hera.Money.Price_Type;
+         Item  : Sell_Offer_Record);
+
+      ------------------
+      -- Add_Quantity --
+      ------------------
+
+      procedure Add_Quantity
+        (Price : Hera.Money.Price_Type;
+         Item  : Sell_Offer_Record)
+      is
+         pragma Unreferenced (Price);
+      begin
+         Total := Total + Item.Quantity;
+      end Add_Quantity;
+
+   begin
+      if Market.Sell_Offers.Contains (Commodity) then
+         Market.Sell_Offers.Element (Commodity).Iterate (Add_Quantity'Access);
+      end if;
+      return Total;
+   end Total_Available;
 
    ------------------
    -- Update_Stock --

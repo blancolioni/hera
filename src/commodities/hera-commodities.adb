@@ -304,9 +304,11 @@ package body Hera.Commodities is
       Stock : Stock_Entry := Has_Stock.Get_Stock (Commodity);
    begin
       Value :=
-        (if Quantity = Stock.Quantity
-         then Stock.Value
-         else Total (Price (Stock.Value, Stock.Quantity), Quantity));
+        Min
+          (Stock.Value,
+           (if Quantity = Stock.Quantity
+            then Stock.Value
+            else Total (Price (Stock.Value, Stock.Quantity), Quantity)));
       Stock.Quantity := Stock.Quantity - Quantity;
       Stock.Value := Stock.Value - Value;
       Has_Stock.Set_Stock (Commodity, Stock);

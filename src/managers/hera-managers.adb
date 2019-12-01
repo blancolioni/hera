@@ -5,6 +5,7 @@ with Hera.Money;
 
 with Hera.Updates.Events;
 
+with Hera.Objects;
 with Hera.Colonies;
 with Hera.Managers.Colonies;
 
@@ -74,6 +75,7 @@ package body Hera.Managers is
                pragma Assert (M.Next_Update > Current_Clock);
                Active_Queue.Insert (M.Next_Update, M);
             end if;
+            Hera.Objects.Apply_Updates;
          end;
       end loop;
 

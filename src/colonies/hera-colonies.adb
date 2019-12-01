@@ -1,6 +1,7 @@
 with Ada.Containers.Vectors;
 
 with Hera.Colonies.Transactions;
+with Hera.Identifiers.Maps;
 
 package body Hera.Colonies is
 
@@ -10,6 +11,11 @@ package body Hera.Colonies is
      new Ada.Containers.Vectors (Positive, Colony_Type);
 
    Vector : Colony_Vectors.Vector;
+
+   package Planet_Colony_Maps is
+     new Hera.Identifiers.Maps (Colony_Vectors.Vector, Colony_Vectors."=");
+
+   Planet_Colony_Map : Planet_Colony_Maps.Map;
 
    type Add_Population_Update is
      new Hera.Objects.Root_Update_Type with
@@ -323,6 +329,26 @@ package body Hera.Colonies is
       end loop;
    end Iterate;
 
+   -----------------------------
+   -- Iterate_Planet_Colonies --
+   -----------------------------
+
+   procedure Iterate_Planet_Colonies
+     (Planet  : not null access constant
+        Hera.Planets.Root_Planet_Type'Class;
+      Process : not null access
+        procedure (Colony : Colony_Type))
+   is
+   begin
+      if Planet_Colony_Map.Contains (Planet.Identifier) then
+         for Colony of
+           Planet_Colony_Map.Constant_Reference (Planet.Identifier)
+         loop
+            Process (Colony);
+         end loop;
+      end if;
+   end Iterate_Planet_Colonies;
+
    ---------------------
    -- Iterate_Workers --
    ---------------------
@@ -359,6 +385,11 @@ package body Hera.Colonies is
       do
          Result.Log ("founded on " & Colony.Planet.Name);
          Vector.Append (Result);
+         if not Planet_Colony_Map.Contains (Colony.Planet.Identifier) then
+            Planet_Colony_Map.Insert
+              (Colony.Planet.Identifier, Colony_Vectors.Empty_Vector);
+         end if;
+         Planet_Colony_Map (Colony.Planet.Identifier).Append (Result);
       end return;
    end New_Colony;
 

@@ -4,8 +4,10 @@ with WL.String_Maps;
 with Hera.Money;
 with Hera.Quantities;
 
+with Hera.Colonies;
 with Hera.Commodities;
 with Hera.Facilities;
+with Hera.Markets;
 with Hera.Sectors;
 with Hera.Warehouses;
 
@@ -237,6 +239,10 @@ package body Hera.Managers.Installations is
          elsif Consume.Quantity > Produce.Quantity
            and then Factory.Produces_Class (Commodity.Class)
          then
+            Installation.Log
+              (Commodity.Tag
+               & ": production: " & Show (Produce.Quantity)
+               & "; consumption: " & Show (Consume.Quantity));
             Set (Consumption, Consume.Quantity - Produce.Quantity, Consume);
             Prod_Quantity := Prod_Quantity
               + Consume.Quantity - Produce.Quantity;
@@ -267,6 +273,99 @@ package body Hera.Managers.Installations is
                Remaining  : Quantity_Type := Quantity;
                Value      : Hera.Money.Money_Type;
 
+               procedure Buy_From_Colony_Market
+                 (Colony : Hera.Colonies.Colony_Type);
+
+               procedure Take_From_Colony_Warehouse
+                 (Colony : Hera.Colonies.Colony_Type);
+
+               ----------------------------
+               -- Buy_From_Colony_Market --
+               ----------------------------
+
+               procedure Buy_From_Colony_Market
+                 (Colony : Hera.Colonies.Colony_Type)
+               is
+               begin
+                  if Remaining = Zero then
+                     return;
+                  end if;
+
+                  declare
+                     use type Hera.Money.Money_Type;
+                     Market : constant Hera.Markets.Market_Type :=
+                                Colony.Market;
+                     Want   : constant Quantity_Type :=
+                                Min (Market.Total_Available (Commodity),
+                                     Remaining);
+                     Cost   : constant Hera.Money.Money_Type :=
+                                Market.Current_Cost (Commodity, Want);
+                     Buy    : constant Quantity_Type :=
+                                (if Cost > Installation.Owner.Cash
+                                 then Market.Available
+                                   (Commodity, Installation.Owner.Cash)
+                                 else Want);
+                  begin
+                     if Buy > Zero then
+                        Installation.Log
+                          ("buy " & Show (Buy) & " "
+                           & Commodity.Tag
+                           & " from market at "
+                           & Colony.Name);
+
+                        Market.Buy
+                          (Trader    => Installation.Owner,
+                           Stock     => Installation,
+                           Commodity => Commodity,
+                           Quantity  => Buy,
+                           Cash      => Installation.Owner.Cash);
+                        Remaining := Remaining - Buy;
+                     end if;
+                  end;
+
+               end Buy_From_Colony_Market;
+
+               --------------------------------
+               -- Take_From_Colony_Warehouse --
+               --------------------------------
+
+               procedure Take_From_Colony_Warehouse
+                 (Colony : Hera.Colonies.Colony_Type)
+               is
+                  use type Hera.Colonies.Colony_Type;
+               begin
+                  if Remaining = Zero
+                    or else Colony = Installation.Colony
+                    or else not Colony.Has_Warehouse (Installation.Owner)
+                  then
+                     return;
+                  end if;
+
+                  declare
+                     Warehouse : constant Hera.Warehouses.Warehouse_Type :=
+                                   Colony.Warehouse (Installation.Owner);
+                     Take      : constant Quantity_Type :=
+                                   Min (Warehouse.Quantity (Commodity),
+                                        Remaining);
+                     Value     : Hera.Money.Money_Type;
+                  begin
+                     if Take > Zero then
+                        Installation.Log
+                          ("transfer " & Show (Take) & " "
+                           & Commodity.Tag
+                           & " from warehouse at "
+                           & Colony.Name);
+
+                        Warehouse.Remove
+                          (Commodity, Take, Value);
+                        Installation.Add
+                          (Commodity, Take, Value);
+                        Remaining := Remaining - Take;
+                     end if;
+                  end;
+
+               end Take_From_Colony_Warehouse;
+
             begin
 
                if Remaining > Have then
@@ -279,12 +378,15 @@ package body Hera.Managers.Installations is
                end if;
 
                if Remaining > Zero then
-                  Installation.Colony.Market.Buy
-                    (Trader    => Installation.Owner,
-                     Stock     => Installation,
-                     Commodity => Commodity,
-                     Quantity  => Remaining,
-                     Cash      => Installation.Owner.Cash);
+                  Hera.Colonies.Iterate_Planet_Colonies
+                    (Installation.Colony.Planet,
+                     Take_From_Colony_Warehouse'Access);
+               end if;
+
+               if Remaining > Zero then
+                  Hera.Colonies.Iterate_Planet_Colonies
+                    (Installation.Colony.Planet,
+                     Buy_From_Colony_Market'Access);
                end if;
             end;
          end loop;
