@@ -4,3 +4,9 @@
 # Ada Library Information
 *.ali
 local.options
+build/*
+hera.gpr
+log/hera.log
+log/server.log
+save.game
+test.txt
