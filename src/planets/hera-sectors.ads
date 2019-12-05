@@ -3,6 +3,7 @@ private with Ada.Containers.Doubly_Linked_Lists;
 with Hera.Objects;
 
 with Hera.Commodities;
+with Hera.Surfaces;
 with Hera.Terrain;
 
 with Hera.Quantities;
@@ -11,14 +12,6 @@ package Hera.Sectors is
 
    type Root_Sector_Type is
      new Hera.Objects.Root_Hera_Object with private;
-
-   function X
-     (Sector : Root_Sector_Type'Class)
-      return Positive;
-
-   function Y
-     (Sector : Root_Sector_Type'Class)
-      return Positive;
 
    function Terrain
      (Sector : Root_Sector_Type'Class)
@@ -63,7 +56,7 @@ private
    type Root_Sector_Type is
      new Hera.Objects.Root_Hera_Object with
       record
-         X, Y     : Positive;
+         Tile     : Hera.Surfaces.Surface_Tile_Index;
          Terrain  : Hera.Terrain.Terrain_Type;
          Deposits : Sector_Deposit_Lists.List;
       end record;
@@ -71,21 +64,11 @@ private
    overriding function Log_Id
      (Sector : Root_Sector_Type)
       return String
-   is (Sector.X'Image & Sector.Y'Image);
+   is (Sector.Tile'Image);
 
    function Terrain
      (Sector : Root_Sector_Type'Class)
       return Hera.Terrain.Terrain_Type
    is (Sector.Terrain);
-
-   function X
-     (Sector : Root_Sector_Type'Class)
-      return Positive
-   is (Sector.X);
-
-   function Y
-     (Sector : Root_Sector_Type'Class)
-      return Positive
-   is (Sector.Y);
 
 end Hera.Sectors;

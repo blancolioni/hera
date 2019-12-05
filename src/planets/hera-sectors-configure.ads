@@ -1,7 +1,7 @@
 package Hera.Sectors.Configure is
 
    function New_Sector
-     (X, Y    : Positive;
+     (Tile    : Hera.Surfaces.Surface_Tile_Index;
       Terrain : Hera.Terrain.Terrain_Type)
       return Sector_Type;
 

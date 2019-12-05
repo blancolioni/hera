@@ -29,6 +29,7 @@ source_dir = src/ui/gtk
 source_dir = src/ui/models
 source_dir = src/worlds
 source_dir = src/updates-real-time
+source_dir = src/voronoi
 depend = { project = Tropos version = any }
 depend = { project = Wlib version = any }
 depend = { project = lui version = any }
@@ -38,3 +39,5 @@ main_unit = hera-driver
 exec_name = hera
 config_dir = config
 path_unit = { unit = Hera.Paths path = src/driver/hera-paths.ads }
+language = ada
+language = c

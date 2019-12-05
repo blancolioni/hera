@@ -62,18 +62,6 @@ package body Hera.Planets is
       end return;
    end Find;
 
-   -----------------
-   -- Get_Sectors --
-   -----------------
-
-   function Get_Sectors
-     (Planet : Root_Planet_Type'Class)
-      return Hera.Sectors.Sector_Array
-   is
-   begin
-      return Surfaces.Get_Sectors (Planet);
-   end Get_Sectors;
-
    -------------
    -- Iterate --
    -------------
@@ -105,6 +93,31 @@ package body Hera.Planets is
          Right       => Planet.Consumption.all,
          Process     => Process);
    end Iterate_Economy;
+
+   -------------------
+   -- Iterate_Tiles --
+   -------------------
+
+   procedure Iterate_Tiles
+     (Planet  : not null access constant Root_Planet_Type'Class;
+      Process : not null access
+        procedure (Tile : Planet_Tile))
+   is
+      procedure Call (Index : Hera.Surfaces.Surface_Tile_Index);
+
+      ----------
+      -- Call --
+      ----------
+
+      procedure Call (Index : Hera.Surfaces.Surface_Tile_Index) is
+      begin
+         Process ((Planet_Type (Planet), Index));
+      end Call;
+
+   begin
+      Hera.Planets.Surfaces.Get_Surface (Planet.all)
+        .Iterate_Tiles (Call'Access);
+   end Iterate_Tiles;
 
    ----------------
    -- New_Planet --
@@ -182,28 +195,17 @@ package body Hera.Planets is
       Config.Add ("sea-level", Object.Sea_Level);
    end Save;
 
-   --------------------
-   -- Surface_Height --
-   --------------------
+   ---------------
+   -- Serialize --
+   ---------------
 
-   function Surface_Height
-     (Planet : Root_Planet_Type'Class)
-      return Natural
+   function Serialize
+     (Tile : Planet_Tile)
+      return Hera.Json.Json_Object'Class
    is
    begin
-      return Surfaces.Get_Surface (Planet).Height;
-   end Surface_Height;
-
-   -------------------
-   -- Surface_Width --
-   -------------------
-
-   function Surface_Width
-     (Planet : Root_Planet_Type'Class)
-      return Natural
-   is
-   begin
-      return Surfaces.Get_Surface (Planet).Width;
-   end Surface_Width;
+      return Hera.Planets.Surfaces.Get_Surface (Tile.Planet.all)
+        .Serialize (Tile.Tile_Index);
+   end Serialize;
 
 end Hera.Planets;

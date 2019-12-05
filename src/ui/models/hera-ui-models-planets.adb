@@ -1,24 +1,15 @@
-with Ada.Containers.Vectors;
-
 with Hera.UI.Models.Data_Source;
 
 with Hera.Knowledge;
 
 with Hera.Corporations;
 with Hera.Planets;
-with Hera.Sectors;
 
 package body Hera.UI.Models.Planets is
-
-   package Sector_Vectors is
-     new Ada.Containers.Vectors
-       (Positive, Hera.Sectors.Sector_Type,
-        Hera.Sectors."=");
 
    type Planet_Model_Type is new Root_Hera_Model with
       record
          Planet   : Hera.Planets.Planet_Type;
-         Sectors  : Sector_Vectors.Vector;
       end record;
 
    overriding procedure Start
@@ -70,52 +61,32 @@ package body Hera.UI.Models.Planets is
 
       Result  : Json.Json_Object;
       Sectors : Json.Json_Array;
+
+      procedure Serialize_Tile
+        (Tile : Hera.Planets.Planet_Tile);
+
+      --------------------
+      -- Serialize_Tile --
+      --------------------
+
+      procedure Serialize_Tile
+        (Tile : Hera.Planets.Planet_Tile)
+      is
+      begin
+         Sectors.Append
+           (Hera.Planets.Serialize (Tile));
+      end Serialize_Tile;
+
    begin
       Result.Set_Property
         ("title", Model.Planet.Name);
 
-      Result.Set_Property ("width", Model.Planet.Surface_Width);
-      Result.Set_Property ("height", Model.Planet.Surface_Height);
-
-      for Item of Model.Sectors loop
-         declare
-            Sector : Json.Json_Object;
-
-            procedure Set (Name : String;
-                           X    : String);
-
-            procedure Set (Name : String;
-                           X    : Integer);
-
-            procedure Set (Name : String;
-                           X    : String)
-            is
-            begin
-               Sector.Set_Property (Name, X);
-            end Set;
-
-            ---------
-            -- Set --
-            ---------
-
-            procedure Set (Name : String;
-                           X    : Integer)
-            is
-            begin
-               Sector.Set_Property (Name, X);
-            end Set;
-
-         begin
-            Sector.Set_Property ("id", String (Item.Identifier));
-            Set ("x", Item.X);
-            Set ("y", Item.Y);
-            Set ("terrain", Item.Terrain.Tag);
-            Sectors.Append (Sector);
-         end;
-      end loop;
+      Model.Planet.Iterate_Tiles
+        (Serialize_Tile'Access);
 
       Result.Set_Property ("sectors", Sectors);
-
+      Result.Set_Property ("name", Model.Planet.Name);
+      Result.Set_Property ("id", String (Model.Planet.Identifier));
       return Result;
 
    end Get;
@@ -163,10 +134,6 @@ package body Hera.UI.Models.Planets is
 
       Root_Hera_Model (Model).Start (User, Arguments);
       Model.Planet := Planet;
-
-      for Sector of Planet.Get_Sectors loop
-         Model.Sectors.Append (Sector);
-      end loop;
 
    end Start;
 

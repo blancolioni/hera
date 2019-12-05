@@ -1,38 +1,13 @@
-with Ada.Containers.Doubly_Linked_Lists;
-
 with WL.Heaps;
-with WL.Random;
 with WL.String_Maps;
 
-with Hera.Random;
 with Hera.Solar_System;
 
-with Hera.Sectors.Configure;
-with Hera.Terrain;
+with Hera.Planets.Surfaces.Generate;
 
 package body Hera.Planets.Surfaces is
 
    Surface_Version : constant Hera.Objects.Object_Version := "0.0.1";
-
-   type Terrain_Chance_Record is
-      record
-         Terrain : Hera.Terrain.Terrain_Type;
-         Chance  : Unit_Real;
-      end record;
-
-   package Terrain_Chance_Lists is
-     new Ada.Containers.Doubly_Linked_Lists (Terrain_Chance_Record);
-
-   type Terrain_Layout_Array is
-     array (Positive range <>, Positive range <>)
-     of Hera.Terrain.Terrain_Type;
-
-   function Random_Terrain
-     (Current : Terrain_Layout_Array;
-      X, Y    : Positive;
-      Chance  : Terrain_Chance_Lists.List;
-      Default : Hera.Terrain.Terrain_Type)
-      return Hera.Terrain.Terrain_Type;
 
    package Surface_Maps is
      new WL.String_Maps (Surface_Type);
@@ -46,80 +21,39 @@ package body Hera.Planets.Surfaces is
    --------------------
 
    procedure Create_Surface (Planet : Root_Planet_Type'Class) is
-      Height : constant Natural :=
-        Natural
-          (10.0 * Planet.Radius / Hera.Solar_System.Earth_Radius);
-      Width  : constant Natural := Height * 2;
-      Terrain : Terrain_Layout_Array (1 .. Width, 1 .. Height) :=
-                  (others => (others => null));
-      Chances : Terrain_Chance_Lists.List;
-      Default_Terrain : constant Hera.Terrain.Terrain_Type :=
-                          Planet.Climate.Default_Terrain;
-      Surface         : Root_Surface_Type := Root_Surface_Type'
-        (Hera.Objects.Root_Hera_Object with
-         Width  => Width,
-         Height => Height,
-         Vector => <>);
+      Radius : constant Non_Negative_Real :=
+                 Planet.Radius / Hera.Solar_System.Earth_Radius;
+      Tile_Count : constant Natural :=
+                     (case Planet.Composition is
+                         when Ice | Rock | Rock_Ice | Rock_Iron =>
+                           Natural (Radius * 400.0),
+                         when Hydrogen | Gaseous                =>
+                           0);
+
    begin
 
-      for Terrain of Hera.Terrain.All_Terrain loop
+      if Tile_Count > 0 then
          declare
-            Chance : constant Unit_Real :=
-                       Planet.Climate.Terrain_Chance (Terrain);
+            Tiles   : Hera.Surfaces.Root_Surface_Type;
+            Surface : Root_Surface_Type;
          begin
-            Chances.Append
-              (Terrain_Chance_Record'
-                 (Terrain => Terrain,
-                  Chance  => Chance));
+            Planet.Log
+              ("creating surface with "
+               & Tile_Count'Image & " tiles");
+            Tiles.Create_Voronoi_Partition (Tile_Count);
+            Hera.Planets.Surfaces.Generate.Generate_Surface
+              (Planet  => Planet,
+               Tiles   => Tiles,
+               Surface => Surface);
+
+            Map.Insert
+              (String (Planet.Identifier),
+               Surface_Type
+                 (Surface.New_Object (Surface_Version)));
+
+            Planet.Log ("done");
          end;
-      end loop;
-
-      for Y in Terrain'Range (2) loop
-         for X in Terrain'Range (1) loop
-            Terrain (X, Y) :=
-              Random_Terrain (Terrain, X, Y, Chances, Default_Terrain);
-         end loop;
-      end loop;
-
-      for Y in Terrain'Range (2) loop
-         for X in Terrain'Range (1) loop
-            Surface.Vector.Append
-              (Hera.Sectors.Configure.New_Sector
-                 (X => X,
-                  Y => Y,
-                  Terrain => Terrain (X, Y)));
-         end loop;
-      end loop;
-
-      Map.Insert (String (Planet.Identifier),
-                  Surface_Type (Surface.New_Object (Surface_Version)));
-
---                 begin
---                 for Terrain_Resource of
---               Hera.Db.Terrain_Resource.Select_By_Terrain (Terrain (X, Y))
---                 loop
---                    if Hera.Random.Unit_Random < Terrain_Resource.Chance then
---                       declare
---                          use Hera.Quantities;
---                          Yield : constant Quantity_Type :=
---                            To_Quantity
---                              (Real (WL.Random.Random_Number (1, 20)));
---                          Total : constant Quantity_Type :=
---                            To_Quantity
---                              (Real (WL.Random.Random_Number (1, 1E6)));
---                       begin
---                          Hera.Db.Sector_Deposit.Create
---                            (Planet_Sector => Sector,
---                             Resource      => Terrain_Resource.Resource,
---                             Yield         => Yield,
---                             Total         => Total);
---                       end;
---                    end if;
---                 end loop;
---              end;
---           end loop;
---        end loop;
-
+      end if;
    end Create_Surface;
 
    ----------
@@ -140,7 +74,7 @@ package body Hera.Planets.Surfaces is
       Queue : Sector_Heaps.Heap;
 
    begin
-      for Sector of Surface.Vector loop
+      for Sector of Surface.Sectors loop
          declare
             This_Score : constant Non_Negative_Real := Score (Sector);
          begin
@@ -160,25 +94,6 @@ package body Hera.Planets.Surfaces is
    end Find;
 
    -----------------
-   -- Get_Sectors --
-   -----------------
-
-   function Get_Sectors
-     (Planet : Root_Planet_Type'Class)
-      return Hera.Sectors.Sector_Array
-   is
-      Surface : constant Surface_Type := Get_Surface (Planet);
-   begin
-      return Sectors : Hera.Sectors.Sector_Array
-        (1 .. Surface.Vector.Last_Index)
-      do
-         for I in Sectors'Range loop
-            Sectors (I) := Surface.Vector.Element (I);
-         end loop;
-      end return;
-   end Get_Sectors;
-
-   -----------------
    -- Get_Surface --
    -----------------
 
@@ -194,55 +109,73 @@ package body Hera.Planets.Surfaces is
       return Map.Element (String (Planet.Identifier));
    end Get_Surface;
 
-   --------------------
-   -- Random_Terrain --
-   --------------------
+   -------------------
+   -- Iterate_Tiles --
+   -------------------
 
-   function Random_Terrain
-     (Current : Terrain_Layout_Array;
-      X, Y    : Positive;
-      Chance  : Terrain_Chance_Lists.List;
-      Default : Hera.Terrain.Terrain_Type)
-      return Hera.Terrain.Terrain_Type
+   procedure Iterate_Tiles
+     (Surface : Root_Surface_Type'Class;
+      Process : not null access
+        procedure (Tile : Hera.Surfaces.Surface_Tile_Index))
    is
    begin
-      for Chance_Record of Chance loop
-         if Chance_Record.Chance > 0.0 then
-            declare
-               This_Chance : Non_Negative_Real := Chance_Record.Chance;
-               Neighbour_Count : Natural := 0;
-            begin
-               for DX in -1 .. 1 loop
-                  for DY in -1 .. 1 loop
-                     if Y + DY in Current'Range (2) then
-                        declare
-                           use Hera.Terrain;
-                           New_Y : constant Positive := Y + DY;
-                           New_X : constant Positive :=
-                             (X + DX - 1) mod Current'Length (1) + 1;
-                           N : constant Terrain_Type :=
-                             Current (New_X, New_Y);
-                        begin
-                           if N = Chance_Record.Terrain then
-                              Neighbour_Count := Neighbour_Count + 1;
-                           end if;
-                        end;
-                     end if;
-                  end loop;
-               end loop;
-
-               if Neighbour_Count > 0 then
-                  This_Chance := This_Chance
-                    * Real (WL.Random.Random_Number (1, Neighbour_Count));
-               end if;
-
-               if Hera.Random.Unit_Random < This_Chance then
-                  return Chance_Record.Terrain;
-               end if;
-            end;
-         end if;
+      for I in 1 .. Surface.Tiles.Tile_Count loop
+         Process (I);
       end loop;
-      return Default;
-   end Random_Terrain;
+   end Iterate_Tiles;
+
+   ---------------
+   -- Serialize --
+   ---------------
+
+   function Serialize
+     (Surface : Root_Surface_Type'Class;
+      Tile    : Hera.Surfaces.Surface_Tile_Index)
+      return Hera.Json.Json_Object'Class
+   is
+      Result : Hera.Json.Json_Object;
+
+      function To_Json
+        (P : Hera.Surfaces.Vector_3)
+         return Json.Json_Value'Class;
+
+      -------------
+      -- To_Json --
+      -------------
+
+      function To_Json
+        (P : Hera.Surfaces.Vector_3)
+         return Json.Json_Value'Class
+      is
+         Object : Json.Json_Object;
+      begin
+         Object.Set_Property ("x", Float (P (1)));
+         Object.Set_Property ("y", Float (P (2)));
+         Object.Set_Property ("z", Float (P (3)));
+         return Object;
+      end To_Json;
+
+   begin
+      Result.Set_Property ("index", Natural (Tile));
+      Result.Set_Property ("normal",
+                           To_Json (Surface.Tiles.Tile_Centre (Tile)));
+
+      declare
+         Arr : Json.Json_Array;
+      begin
+         for P of Surface.Tiles.Tile_Boundary (Tile) loop
+            Arr.Append (To_Json (P));
+         end loop;
+         Result.Set_Property ("boundary", Arr);
+      end;
+
+      if Surface.Sectors.Element (Tile).Terrain.Tag = "water" then
+         Result.Set_Property ("color", "blue");
+      else
+         Result.Set_Property ("color", "green");
+      end if;
+
+      return Result;
+   end Serialize;
 
 end Hera.Planets.Surfaces;

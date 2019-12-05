@@ -1,21 +1,26 @@
 import { ClientState } from '../clients/model';
 
+export interface SurfacePoint {
+  x : number,
+  y : number,
+  z : number,
+}
+
 export interface Sector {
-  id: string,
-  x: number,
-  y: number,
-  terrain : string,
+  color: string,
+  normal: SurfacePoint,
+  boundary: SurfacePoint[],
 }
 
 export interface State extends ClientState {
+  id : string,
+  name : string,
   sectors : Sector[];
-  width : number,
-  height : number,
 }
 
 export const planetInitialState = (baseState : ClientState) : State => ({
   ...baseState,
-  width: 0,
-  height: 0,
+  id: '',
+  name: '',
   sectors: [],
 });

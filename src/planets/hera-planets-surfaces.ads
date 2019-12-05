@@ -1,4 +1,5 @@
 private with Ada.Containers.Vectors;
+private with Hera.Surfaces;
 
 with Hera.Objects;
 
@@ -16,8 +17,15 @@ private package Hera.Planets.Surfaces is
       return Non_Negative_Real)
       return Hera.Sectors.Sector_Array;
 
-   function Width (Surface : Root_Surface_Type'Class) return Natural;
-   function Height (Surface : Root_Surface_Type'Class) return Natural;
+   procedure Iterate_Tiles
+     (Surface : Root_Surface_Type'Class;
+      Process : not null access
+        procedure (Tile : Hera.Surfaces.Surface_Tile_Index));
+
+   function Serialize
+     (Surface : Root_Surface_Type'Class;
+      Tile    : Hera.Surfaces.Surface_Tile_Index)
+      return Hera.Json.Json_Object'Class;
 
    type Surface_Type is access constant Root_Surface_Type'Class;
 
@@ -25,28 +33,20 @@ private package Hera.Planets.Surfaces is
      (Planet : Root_Planet_Type'Class)
       return Surface_Type;
 
-   function Get_Sectors
-     (Planet : Root_Planet_Type'Class)
-      return Hera.Sectors.Sector_Array;
-
 private
 
    package Sector_Vectors is
      new Ada.Containers.Vectors
-       (Positive, Hera.Sectors.Sector_Type, Hera.Sectors."=");
+       (Hera.Surfaces.Surface_Tile_Index,
+        Hera.Sectors.Sector_Type, Hera.Sectors."=");
+
+   type Surface_Access is access constant Hera.Surfaces.Surface_Type;
 
    type Root_Surface_Type is
      new Hera.Objects.Root_Hera_Object with
       record
-         Width  : Natural;
-         Height : Natural;
-         Vector : Sector_Vectors.Vector;
+         Tiles   : Surface_Access;
+         Sectors : Sector_Vectors.Vector;
       end record;
-
-   function Width (Surface : Root_Surface_Type'Class) return Natural
-   is (Surface.Width);
-
-   function Height (Surface : Root_Surface_Type'Class) return Natural
-   is (Surface.Height);
 
 end Hera.Planets.Surfaces;

@@ -1,5 +1,7 @@
 private with Tropos;
+private with Hera.Surfaces;
 
+with Hera.Json;
 with Hera.Money;
 with Hera.Quantities;
 
@@ -44,14 +46,6 @@ package Hera.Planets is
      (Planet : Root_Planet_Type'Class)
       return Hera.Climate.Climate_Type;
 
-   function Surface_Width
-     (Planet : Root_Planet_Type'Class)
-      return Natural;
-
-   function Surface_Height
-     (Planet : Root_Planet_Type'Class)
-      return Natural;
-
    function Find
      (Planet : Root_Planet_Type'Class;
       Score  : not null access
@@ -59,9 +53,16 @@ package Hera.Planets is
       return Non_Negative_Real)
       return Hera.Sectors.Sector_Array;
 
-   function Get_Sectors
-     (Planet : Root_Planet_Type'Class)
-      return Hera.Sectors.Sector_Array;
+   type Planet_Tile is private;
+
+   function Serialize
+     (Tile : Planet_Tile)
+      return Hera.Json.Json_Object'Class;
+
+   procedure Iterate_Tiles
+     (Planet  : not null access constant Root_Planet_Type'Class;
+      Process : not null access
+        procedure (Tile : Planet_Tile));
 
    procedure On_Production
      (Planet    : Root_Planet_Type'Class;
@@ -97,6 +98,12 @@ package Hera.Planets is
         procedure (Planet : Planet_Type));
 
 private
+
+   type Planet_Tile is
+      record
+         Planet     : Planet_Type;
+         Tile_Index : Hera.Surfaces.Surface_Tile_Index;
+      end record;
 
    type Root_Planet_Type is
      new Hera.Star_Systems.Root_Star_System_Entity with

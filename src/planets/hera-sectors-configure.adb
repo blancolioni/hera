@@ -10,15 +10,14 @@ package body Hera.Sectors.Configure is
    ----------------
 
    function New_Sector
-     (X, Y    : Positive;
+     (Tile    : Hera.Surfaces.Surface_Tile_Index;
       Terrain : Hera.Terrain.Terrain_Type)
       return Sector_Type
    is
       Sector : Root_Sector_Type :=
                  Root_Sector_Type'
                    (Hera.Objects.Root_Hera_Object with
-                    X        => X,
-                    Y        => Y,
+                    Tile     => Tile,
                     Terrain  => Terrain,
                     Deposits => <>);
 
