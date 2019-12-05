@@ -1,6 +1,7 @@
 with WL.Heaps;
 with WL.String_Maps;
 
+with Hera.Color;
 with Hera.Solar_System;
 
 with Hera.Planets.Surfaces.Generate;
@@ -133,6 +134,8 @@ package body Hera.Planets.Surfaces is
       Tile    : Hera.Surfaces.Surface_Tile_Index)
       return Hera.Json.Json_Object'Class
    is
+      Sector : constant Hera.Sectors.Sector_Type :=
+                 Surface.Sectors.Element (Tile);
       Result : Hera.Json.Json_Object;
 
       function To_Json
@@ -172,7 +175,16 @@ package body Hera.Planets.Surfaces is
       if Surface.Sectors.Element (Tile).Terrain.Tag = "water" then
          Result.Set_Property ("color", "blue");
       else
-         Result.Set_Property ("color", "green");
+         declare
+            Relative_Height : constant Unit_Real :=
+                                Unit_Clamp
+                                  (Sector.Elevation
+                                   / Hera.Sectors.Elevation_Range'Last);
+            Color           : constant Hera.Color.Hera_Color :=
+                                (0.0, 0.25 + Relative_Height * 0.75, 0.0, 1.0);
+         begin
+            Result.Set_Property ("color", Hera.Color.To_Html_String (Color));
+         end;
       end if;
 
       return Result;

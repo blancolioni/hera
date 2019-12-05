@@ -10,3 +10,5 @@ log/hera.log
 log/server.log
 save.game
 test.txt
+config/voronoi.txt
+config/delauny.txt

@@ -10,8 +10,15 @@ with Hera.Quantities;
 
 package Hera.Sectors is
 
+   subtype Elevation_Range is
+     Real range -10_000.0 .. 20_000.0;
+
    type Root_Sector_Type is
      new Hera.Objects.Root_Hera_Object with private;
+
+   function Elevation
+     (Sector : Root_Sector_Type'Class)
+      return Elevation_Range;
 
    function Terrain
      (Sector : Root_Sector_Type'Class)
@@ -56,15 +63,21 @@ private
    type Root_Sector_Type is
      new Hera.Objects.Root_Hera_Object with
       record
-         Tile     : Hera.Surfaces.Surface_Tile_Index;
-         Terrain  : Hera.Terrain.Terrain_Type;
-         Deposits : Sector_Deposit_Lists.List;
+         Tile      : Hera.Surfaces.Surface_Tile_Index;
+         Elevation : Elevation_Range;
+         Terrain   : Hera.Terrain.Terrain_Type;
+         Deposits  : Sector_Deposit_Lists.List;
       end record;
 
    overriding function Log_Id
      (Sector : Root_Sector_Type)
       return String
    is (Sector.Tile'Image);
+
+   function Elevation
+     (Sector : Root_Sector_Type'Class)
+      return Elevation_Range
+   is (Sector.Elevation);
 
    function Terrain
      (Sector : Root_Sector_Type'Class)

@@ -1,5 +1,6 @@
 with Ada.Containers.Doubly_Linked_Lists;
 
+with WL.Noise;
 with WL.Random.Height_Maps;
 
 with Hera.Random;
@@ -9,6 +10,8 @@ with Hera.Terrain;
 with Hera.Sectors.Configure;
 
 package body Hera.Planets.Surfaces.Generate is
+
+   Use_Noise : constant Boolean := True;
 
    type Terrain_Chance_Record is
       record
@@ -98,11 +101,39 @@ package body Hera.Planets.Surfaces.Generate is
 
       Surface.Tiles := new Hera.Surfaces.Root_Surface_Type'Class'(Tiles);
 
-      Heights.Generate_Height_Map
-        (Heights     => Hs,
-         Frequencies => Freqs,
-         Smoothing   => 3,
-         Neighbours  => Get_Neighbours'Access);
+      if Use_Noise then
+         declare
+            Noise : WL.Noise.Perlin_Noise (3);
+         begin
+            Noise.Reset (WL.Random.Random_Number (1, 1_000_000));
+            for I in 1 .. Surface.Tiles.Tile_Count loop
+               declare
+                  Center : constant Hera.Surfaces.Vector_3 :=
+                             Surface.Tiles.Tile_Centre (I);
+                  Coord  : constant WL.Noise.Noise_Vector :=
+                             (1 => Float (Center (1)),
+                              2 => Float (Center (2)),
+                              3 => Float (Center (3)));
+                  Value  : constant WL.Noise.Signed_Unit_Real :=
+                             Noise.Get (Coord);
+                  Elevation : constant Positive :=
+                                Natural
+                                  (Real'Floor
+                                     ((Real (Value) + 1.0) / 2.0
+                                      * Real (Planet.Elevation_Range)))
+                                + 1;
+               begin
+                  Hs (Positive (I)) := Elevation;
+               end;
+            end loop;
+         end;
+      else
+         Heights.Generate_Height_Map
+           (Heights     => Hs,
+            Frequencies => Freqs,
+            Smoothing   => 3,
+            Neighbours  => Get_Neighbours'Access);
+      end if;
 
       for I in 1 .. Tiles.Tile_Count loop
          declare
@@ -110,10 +141,15 @@ package body Hera.Planets.Surfaces.Generate is
                         (if Hs (Positive (I)) <= Planet.Sea_Level
                          then Hera.Terrain.Get ("water")
                          else Hera.Terrain.Get ("plain"));
+            Elevation : constant Real :=
+                          Real (Hs (Positive (I)) - Planet.Sea_Level)
+                          * 100.0;
 
             Sector  : constant Hera.Sectors.Sector_Type :=
                         Hera.Sectors.Configure.New_Sector
-                          (I, Terrain);
+                          (Tile      => I,
+                           Elevation => Elevation,
+                           Terrain   => Terrain);
          begin
             Surface.Sectors.Append (Sector);
          end;
