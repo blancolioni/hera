@@ -318,7 +318,7 @@ package body Hera.Scenarios is
 
          for I in 1 .. Minor_Count loop
             Initialize_Planet
-              (Planet            => Start_Planets (I),
+              (Planet            => Start_Planets (Planet_Index),
                Colony_Config     =>
                  Scenario.Settings.Child ("initial-planet-colonies"),
                Corporation_Count => 1,
