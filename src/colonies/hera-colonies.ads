@@ -87,6 +87,10 @@ package Hera.Colonies is
 
    type Colony_Type is access constant Root_Colony_Type'Class;
 
+   function Get_By_Sector
+     (Sector : Hera.Sectors.Sector_Type)
+      return Colony_Type;
+
    procedure Add_Population
      (Colony   : Root_Colony_Type'Class;
       Class    : Hera.Pops.Classes.Pop_Class_Type;

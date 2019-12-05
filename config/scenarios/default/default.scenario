@@ -10,7 +10,7 @@ major-corporations = {
 }
 
 minor-corporations = {
-   count = 0
+   count = 5
    start-cash = 1M
 }
 

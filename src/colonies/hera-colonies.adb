@@ -17,6 +17,11 @@ package body Hera.Colonies is
 
    Planet_Colony_Map : Planet_Colony_Maps.Map;
 
+   package Sector_Colony_Maps is
+     new Hera.Identifiers.Maps (Colony_Type);
+
+   Sector_Colony_Map : Sector_Colony_Maps.Map;
+
    type Add_Population_Update is
      new Hera.Objects.Root_Update_Type with
       record
@@ -252,6 +257,22 @@ package body Hera.Colonies is
    end Execute;
 
    -------------------
+   -- Get_By_Sector --
+   -------------------
+
+   function Get_By_Sector
+     (Sector : Hera.Sectors.Sector_Type)
+      return Colony_Type
+   is
+   begin
+      if Sector_Colony_Map.Contains (Sector.Identifier) then
+         return Sector_Colony_Map.Element (Sector.Identifier);
+      else
+         return null;
+      end if;
+   end Get_By_Sector;
+
+   -------------------
    -- Has_Warehouse --
    -------------------
 
@@ -385,6 +406,8 @@ package body Hera.Colonies is
       do
          Result.Log ("founded on " & Colony.Planet.Name);
          Vector.Append (Result);
+         Sector_Colony_Map.Insert (Colony.Sector.Identifier, Result);
+
          if not Planet_Colony_Map.Contains (Colony.Planet.Identifier) then
             Planet_Colony_Map.Insert
               (Colony.Planet.Identifier, Colony_Vectors.Empty_Vector);
