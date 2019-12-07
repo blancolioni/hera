@@ -133,20 +133,20 @@ package body Hera.Surfaces is
                      ---------------------
 
                      procedure Check_Neighbour (Index : Positive) is
+                        Neighbour_Index : constant Surface_Tile_Index :=
+                                            Surface_Tile_Index (Index);
                      begin
                         if Index = I then
                            return;
                         end if;
 
                         for N of Tile.Neighbours loop
-                           if N = Surface_Tile_Count (Index) then
+                           if Neighbour_Index = N then
                               return;
                            end if;
                         end loop;
 
-                        Tile.Neighbours.Append
-                          (Surface_Tile_Count
-                             (Index));
+                        Tile.Neighbours.Append (Neighbour_Index);
                      end Check_Neighbour;
 
                   begin
@@ -164,11 +164,15 @@ package body Hera.Surfaces is
       end Create_Partition;
 
    begin
-      Hera.Spheres.Spiral_Sphere_Points (Pts, Count);
+      Hera.Spheres.Spiral_Sphere_Points (Pts, Count - 1);
+
       for Pt of Pts loop
          Voronoi.Add_Spherical_Point (Pt.X, Pt.Y, Pt.Z);
       end loop;
+
       Voronoi.Generate;
+
+      Pts.Append ((0.0, 0.0, 1.0));
 
       Create_Partition;
 

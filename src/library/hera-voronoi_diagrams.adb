@@ -30,6 +30,10 @@ package body Hera.Voronoi_Diagrams is
       Out_File : Interfaces.C.Strings.chars_ptr);
    pragma Import (C, Calculate_Voronoi_Diagram);
 
+   procedure Create_Spherical_Cap
+     (Diagram   : in out Voronoi_Diagram'Class;
+      Triangles : in out Triangle_Vectors.Vector);
+
    ---------------
    -- Add_Point --
    ---------------
@@ -48,7 +52,6 @@ package body Hera.Voronoi_Diagrams is
       To.Max_Y := Real'Max (To.Max_Y, Y);
 
       To.Sites.Append (New_Site);
-
    end Add_Point;
 
    -------------------------
@@ -61,6 +64,7 @@ package body Hera.Voronoi_Diagrams is
    is
    begin
       To.Add_Point (X / (1.0 - Z), Y / (1.0 - Z));
+      To.Spherical := True;
    end Add_Spherical_Point;
 
    -----------
@@ -76,6 +80,27 @@ package body Hera.Voronoi_Diagrams is
       Item.Max_X := Real'First;
       Item.Max_Y := Real'First;
    end Clear;
+
+   --------------------------
+   -- Create_Spherical_Cap --
+   --------------------------
+
+   procedure Create_Spherical_Cap
+     (Diagram   : in out Voronoi_Diagram'Class;
+      Triangles : in out Triangle_Vectors.Vector)
+   is
+      Hull     : constant Hera.Voronoi_Diagrams.Point_Index_Array :=
+                   Diagram.Get_Convex_Hull;
+      Previous : Positive := Hull (Hull'Last);
+      Cap      : constant Positive := Diagram.Sites.Last_Index + 1;
+      Index    : Positive := Diagram.Sites.Last_Index + 1;
+   begin
+      for H of Hull loop
+         Triangles.Append ((Cap, H, Previous));
+         Index := Index + 1;
+         Previous := H;
+      end loop;
+   end Create_Spherical_Cap;
 
    ------------------------
    -- Find_Circle_Centre --
@@ -128,170 +153,78 @@ package body Hera.Voronoi_Diagrams is
 
       Read_Triangles (Triangle_Path, Triangles);
 
-      for T of Triangles loop
-         declare
-            Centre : constant Voronoi_Point :=
-                       Find_Circle_Centre
-                         (Diagram.Sites.Element (T.A).Point,
-                          Diagram.Sites.Element (T.B).Point,
-                          Diagram.Sites.Element (T.C).Point);
-         begin
-            Diagram.Diagram_Pts.Append (Centre);
-            Diagram.Triangles.Append ((T.A, T.B, T.C));
+      if Diagram.Spherical then
+         Diagram.Create_Spherical_Cap (Triangles);
+         for T of Triangles loop
+            Diagram.Triangles.Append (T);
+         end loop;
+      else
 
-         end;
-      end loop;
+         for T of Triangles loop
+            declare
+               Centre : constant Voronoi_Point :=
+                          Find_Circle_Centre
+                            (Diagram.Sites.Element (T.A).Point,
+                             Diagram.Sites.Element (T.B).Point,
+                             Diagram.Sites.Element (T.C).Point);
+            begin
+               Diagram.Diagram_Pts.Append (Centre);
+               Diagram.Triangles.Append ((T.A, T.B, T.C));
+            end;
+         end loop;
 
-      for Site_Index in 1 .. Diagram.Sites.Last_Index loop
-         declare
-            Site_Points : Point_Index_Array (1 .. 20);
-            Count       : Natural := 0;
-         begin
-            for Triangle_Index in 1 .. Triangles.Last_Index loop
-               declare
-                  T : Voronoi_Triangle renames Triangles (Triangle_Index);
-               begin
-                  if T.A = Site_Index
-                    or else T.B = Site_Index
-                    or else T.C = Site_Index
-                  then
-                     Count := Count + 1;
-                     Site_Points (Count) := Triangle_Index;
-                  end if;
-               end;
-            end loop;
+         for Site_Index in 1 .. Diagram.Sites.Last_Index loop
+            declare
+               Site_Points : Point_Index_Array (1 .. 20);
+               Count       : Natural := 0;
+            begin
+               for Triangle_Index in 1 .. Triangles.Last_Index loop
+                  declare
+                     T : Voronoi_Triangle renames Triangles (Triangle_Index);
+                  begin
+                     if T.A = Site_Index
+                       or else T.B = Site_Index
+                       or else T.C = Site_Index
+                     then
+                        Count := Count + 1;
+                        Site_Points (Count) := Triangle_Index;
+                     end if;
+                  end;
+               end loop;
 
-            Diagram.Sort_Points (Site_Points (1 .. Count),
-                                 Diagram.Sites.Element (Site_Index).Point);
-            Diagram.Diagram.Append ((Count, Site_Points (1 .. Count)));
-         end;
-      end loop;
---
---        Diagram.Diagram.Set_Length (Diagram.Sites.Length);
---
---        for Site of Diagram.Sites loop
---           declare
---              Closest : array (1 .. 4) of Natural := (others => 0);
---              Minimum : array (1 .. 4) of Real    := (others => Real'Last);
---           begin
---              for Neighbour of Diagram.Sites loop
---                 if Site.Site_Index /= Neighbour.Site_Index then
---                    declare
---                       D : constant Real :=
---                             (Neighbour.Point.X - Site.Point.X) ** 2
---                             + (Neighbour.Point.Y - Site.Point.Y) ** 2;
---                       Index : Natural := Minimum'Last;
---                    begin
---                       while Index > 0 loop
---                          exit when D >= Minimum (Index);
---
---                          if Index < Minimum'Last then
---                             Minimum (Index + 1) := Minimum (Index);
---                             Closest (Index + 1) := Closest (Index);
---                          end if;
---
---                          Index := Index - 1;
---
---                       end loop;
---
---                       if Index < Minimum'Last then
---                          Minimum (Index + 1) := D;
---                          Closest (Index + 1) := Neighbour.Site_Index;
---                       end if;
---                    end;
---                 end if;
---              end loop;
---
---              declare
---                 type Array_Of_Points is
---                   array (Positive range <>) of Voronoi_Point;
---                 Last_D : Real := Minimum (1);
---                 Pts    : Array_Of_Points (Minimum'Range);
---                 Count  : Natural;
---              begin
---                 for I in Minimum'Range loop
---                    exit when I > 3 and then Minimum (I) > Last_D * 5.0;
---                    Count := I;
---                    declare
---                       Other_Site : Voronoi_Site renames
---                                      Diagram.Sites (Closest (I));
---                       X          : constant Real :=
---                                  (Site.Point.X + Other_Site.Point.X) / 2.0;
---                       Y          : constant Real :=
---                                  (Site.Point.Y + Other_Site.Point.Y) / 2.0;
---
---                    begin
---                       Pts (I) := (X, Y);
---
---                    end;
---                    Last_D := Minimum (I);
---                 end loop;
---
---                 declare
---                    Min_X       : Real := Real'Last;
---                    Min_X_Index : Positive;
---                    Min_Y       : Real := Real'Last;
---                    Min_Y_Index : Positive;
---                    Max_X       : Real := Real'First;
---                    Max_X_Index : Positive;
---              Pts_Orig    : constant Array_Of_Points := Pts (1 .. Count);
---                 begin
---                    for I in Pts_Orig'Range loop
---                       if Pts (I).X < Min_X then
---                          Min_X := Pts_Orig (I).X;
---                          Min_X_Index := I;
---                       end if;
---                    end loop;
---                    Pts (1) := Pts_Orig (Min_X_Index);
---
---                    for I in Pts_Orig'Range loop
---                       if I /= Min_X_Index
---                         and then Pts_Orig (I).Y < Min_Y
---                       then
---                          Min_Y := Pts_Orig (I).Y;
---                          Min_Y_Index := I;
---                       end if;
---                    end loop;
---                    Pts (2) := Pts_Orig (Min_Y_Index);
---
---                    for I in Pts_Orig'Range loop
---                       if I /= Min_X_Index
---                         and then I /= Min_Y_Index
---                         and then Pts_Orig (I).X > Max_X
---                       then
---                          Max_X := Pts_Orig (I).X;
---                          Max_X_Index := I;
---                       end if;
---                    end loop;
---
---                    Pts (3) := Pts_Orig (Min_Y_Index);
---
---                    if Count > 3 then
---                       for I in Pts_Orig'Range loop
---                          if I /= Min_Y_Index
---                            and then I /= Min_X_Index
---                            and then I /= Max_X_Index
---                          then
---                             Pts (4) := Pts_Orig (I);
---                          end if;
---                       end loop;
---                    end if;
---                 end;
---
---                 declare
---                    Indices : Point_Index_Array (1 .. Count);
---                 begin
---                    for I in Indices'Range loop
---                       Diagram.Diagram_Pts.Append (Pts (I));
---                       Indices (I) := Diagram.Diagram_Pts.Last_Index;
---                    end loop;
---                    Diagram.Diagram.Replace_Element
---                      (Site.Site_Index, ((Count, Indices)));
---                 end;
---              end;
---           end;
---        end loop;
+               Diagram.Sort_Points (Site_Points (1 .. Count),
+                                    Diagram.Sites.Element (Site_Index).Point);
+               Diagram.Diagram.Append ((Count, Site_Points (1 .. Count)));
+            end;
+         end loop;
+      end if;
    end Generate;
+
+   ---------------------
+   -- Get_Convex_Hull --
+   ---------------------
+
+   function Get_Convex_Hull
+     (Diagram : Voronoi_Diagram'Class)
+      return Point_Index_Array
+   is
+      Pts : Geometry.Point_Vectors.Vector;
+   begin
+      for Site of Diagram.Sites loop
+         Pts.Append (Site.Point);
+      end loop;
+
+      declare
+         Hull : constant Geometry.Point_Vectors.Vector :=
+                  Geometry.Convex_Hull (Pts);
+      begin
+         return Result : Point_Index_Array (1 .. Hull.Last_Index) do
+            for I in Result'Range loop
+               Result (I) := Pts.Find_Index (Hull.Element (I));
+            end loop;
+         end return;
+      end;
+   end Get_Convex_Hull;
 
    --------------------------
    -- Get_Delauny_Triangle --

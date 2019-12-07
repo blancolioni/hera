@@ -1,7 +1,11 @@
 private with Ada.Containers.Vectors;
 private with Ada.Containers.Indefinite_Vectors;
+with WL.Numerics.Generic_Geometry;
 
 package Hera.Voronoi_Diagrams is
+
+   package Geometry is
+     new WL.Numerics.Generic_Geometry (Real);
 
    type Voronoi_Diagram is tagged limited private;
 
@@ -37,6 +41,12 @@ package Hera.Voronoi_Diagrams is
      (Diagram        : Voronoi_Diagram'Class;
       Vertex_Index   : Positive;
       X, Y, Z        : out Signed_Unit_Real);
+
+   type Point_Index_Array is array (Positive range <>) of Positive;
+
+   function Get_Convex_Hull
+     (Diagram : Voronoi_Diagram'Class)
+      return Point_Index_Array;
 
    function Polygon_Count
      (Item : Voronoi_Diagram'Class)
@@ -76,13 +86,10 @@ package Hera.Voronoi_Diagrams is
 
 private
 
-   type Voronoi_Point is
-      record
-         X, Y : Real;
-      end record;
+   subtype Voronoi_Point is Geometry.Point_Type;
 
    package Point_Vectors is
-     new Ada.Containers.Vectors (Positive, Voronoi_Point);
+     new Ada.Containers.Vectors (Positive, Voronoi_Point, Geometry."=");
 
    type Voronoi_Site is
       record
@@ -92,8 +99,6 @@ private
 
    package Site_Vectors is
      new Ada.Containers.Vectors (Positive, Voronoi_Site);
-
-   type Point_Index_Array is array (Positive range <>) of Positive;
 
    type Voronoi_Polygon (Count : Natural) is
       record
@@ -119,6 +124,7 @@ private
          Max_X, Max_Y : Real := Real'First;
          Diagram_Pts  : Point_Vectors.Vector;
          Diagram      : Polygon_Vectors.Vector;
+         Spherical    : Boolean := False;
       end record;
 
    function Vertex_Count
