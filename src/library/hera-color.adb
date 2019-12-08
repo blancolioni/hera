@@ -50,6 +50,23 @@ package body Hera.Color is
       end if;
    end From_String;
 
+   -----------------
+   -- Interpolate --
+   -----------------
+
+   function Interpolate
+     (From, To : Hera_Color;
+      Progress : Unit_Real)
+      return Hera_Color
+   is (From.Red + (To.Red - From.Red) * Progress,
+       From.Green + (To.Green - From.Green) * Progress,
+       From.Blue + (To.Blue - From.Blue) * Progress,
+       From.Alpha + (To.Alpha - From.Alpha) * Progress);
+
+   ---------------------
+   -- Parse_Hex_Color --
+   ---------------------
+
    function Parse_Hex_Color (Spec : String) return Hera_Color is
       Valid_Spec : constant String :=
                      Filter (Spec, "0123456789ABCDEFabcdef");

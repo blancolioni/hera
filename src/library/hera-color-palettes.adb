@@ -12,13 +12,33 @@ package body Hera.Color.Palettes is
    -- Get_Color --
    ---------------
 
-   function Get_Color (Palette : Palette_Type; Value : Real) return Hera_Color
+   function Get_Color
+     (Palette : Palette_Type;
+      Value   : Real)
+      return Hera_Color
    is
-      Position : constant Color_Maps.Cursor :=
-                   Palette.Map.Floor (Value);
+      use type Color_Maps.Cursor;
+      Floor : constant Color_Maps.Cursor :=
+              Palette.Map.Floor (Value);
+      Ceiling : constant Color_Maps.Cursor :=
+                  Palette.Map.Ceiling (Value);
    begin
-      if Color_Maps.Has_Element (Position) then
-         return Color_Maps.Element (Position);
+      if Color_Maps.Has_Element (Floor) then
+         if Color_Maps.Has_Element (Ceiling) then
+            if Ceiling = Floor then
+               return Color_Maps.Element (Floor);
+            else
+               return Interpolate
+                 (Color_Maps.Element (Floor),
+                  Color_Maps.Element (Ceiling),
+                  (Value - Color_Maps.Key (Floor))
+                  / (Color_Maps.Key (Ceiling) - Color_Maps.Key (Floor)));
+            end if;
+         else
+            return Color_Maps.Element (Floor);
+         end if;
+      elsif Color_Maps.Has_Element (Ceiling) then
+         return Color_Maps.Element (Ceiling);
       else
          return Palette.Map.First_Element;
       end if;

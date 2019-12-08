@@ -16,6 +16,11 @@ package Hera.Color is
      (Color : Hera_Color)
       return String;
 
+   function Interpolate
+     (From, To : Hera_Color;
+      Progress : Unit_Real)
+      return Hera_Color;
+
    function To_Html_String
      (R, G, B : Unit_Real;
       Alpha   : Unit_Real := 1.0)
