@@ -1,4 +1,6 @@
 with Ada.Containers.Doubly_Linked_Lists;
+--  with Ada.Text_IO;
+with Hera.Elementary_Functions;
 
 with WL.Noise;
 with WL.Random.Height_Maps;
@@ -9,9 +11,11 @@ with Hera.Terrain;
 
 with Hera.Sectors.Configure;
 
+--  with Hera.Real_Images;
+
 package body Hera.Planets.Surfaces.Generate is
 
-   Use_Noise : constant Boolean := True;
+   Use_Noise : constant Boolean := False;
 
    type Terrain_Chance_Record is
       record
@@ -51,8 +55,7 @@ package body Hera.Planets.Surfaces.Generate is
 
       function Base_Temperature
         (Tile : Hera.Surfaces.Surface_Tile_Index)
-         return Non_Negative_Real
-        with Unreferenced;
+         return Non_Negative_Real;
 
       function Get_Neighbours
         (Index : Positive)
@@ -114,12 +117,13 @@ package body Hera.Planets.Surfaces.Generate is
                              (1 => Float (Center (1)),
                               2 => Float (Center (2)),
                               3 => Float (Center (3)));
-                  Value  : constant WL.Noise.Signed_Unit_Real :=
-                             Noise.Get (Coord);
+                  Value  : constant Signed_Unit_Real :=
+                             Signed_Unit_Real
+                               (Noise.Get (Coord));
                   Elevation : constant Positive :=
                                 Natural
                                   (Real'Floor
-                                     ((Real (Value) + 1.0) / 2.0
+                                     ((Value + 1.0) / 2.0
                                       * Real (Planet.Elevation_Range)))
                                 + 1;
                begin
@@ -137,19 +141,28 @@ package body Hera.Planets.Surfaces.Generate is
 
       for I in 1 .. Tiles.Tile_Count loop
          declare
+            Sea : constant Boolean :=
+                    Hs (Positive (I)) <= Planet.Sea_Level;
             Terrain : constant Hera.Terrain.Terrain_Type :=
-                        (if Hs (Positive (I)) <= Planet.Sea_Level
+                        (if Sea
                          then Hera.Terrain.Get ("water")
                          else Hera.Terrain.Get ("plain"));
             Elevation : constant Real :=
-                          Real (Hs (Positive (I)) - Planet.Sea_Level)
-                          * 100.0;
+                          Hera.Elementary_Functions.Sqrt
+                            (abs (Real (Hs (Positive (I)))
+                             - Real (Planet.Sea_Level)))
+                          * 100.0
+                            * (if Sea then -1.0 else 1.0);
 
             Sector  : constant Hera.Sectors.Sector_Type :=
                         Hera.Sectors.Configure.New_Sector
                           (Tile      => I,
                            Elevation => Elevation,
-                           Terrain   => Terrain);
+                           Terrain   => Terrain,
+                           Ave_Temperature =>
+                             Base_Temperature (I)
+                           - 9.8 * Real'Max (Elevation / 1000.0, 0.0));
+
          begin
             Surface.Sectors.Append (Sector);
          end;

@@ -20,6 +20,14 @@ package Hera.Sectors is
      (Sector : Root_Sector_Type'Class)
       return Elevation_Range;
 
+   function Average_Temperature
+     (Sector : Root_Sector_Type'Class)
+      return Non_Negative_Real;
+
+   function Habitability
+     (Sector : Root_Sector_Type'Class)
+      return Unit_Real;
+
    function Terrain
      (Sector : Root_Sector_Type'Class)
       return Hera.Terrain.Terrain_Type;
@@ -63,10 +71,12 @@ private
    type Root_Sector_Type is
      new Hera.Objects.Root_Hera_Object with
       record
-         Tile      : Hera.Surfaces.Surface_Tile_Index;
-         Elevation : Elevation_Range;
-         Terrain   : Hera.Terrain.Terrain_Type;
-         Deposits  : Sector_Deposit_Lists.List;
+         Tile            : Hera.Surfaces.Surface_Tile_Index;
+         Elevation       : Elevation_Range;
+         Terrain         : Hera.Terrain.Terrain_Type;
+         Deposits        : Sector_Deposit_Lists.List;
+         Habitability    : Unit_Real;
+         Ave_Temperature : Non_Negative_Real;
       end record;
 
    overriding function Log_Id
@@ -78,6 +88,16 @@ private
      (Sector : Root_Sector_Type'Class)
       return Elevation_Range
    is (Sector.Elevation);
+
+   function Average_Temperature
+     (Sector : Root_Sector_Type'Class)
+      return Non_Negative_Real
+   is (Sector.Ave_Temperature);
+
+   function Habitability
+     (Sector : Root_Sector_Type'Class)
+      return Unit_Real
+   is (Sector.Habitability);
 
    function Terrain
      (Sector : Root_Sector_Type'Class)

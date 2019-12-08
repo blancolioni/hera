@@ -6,6 +6,9 @@ with Hera.Planets.Surfaces;
 
 package body Hera.Planets is
 
+   Surface_Map : constant Hera.Planets.Surfaces.Surface_Map_Type :=
+                   Hera.Planets.Surfaces.Temperature_Map;
+
    package Planet_Heaps is
      new WL.Heaps (Non_Negative_Real, Planet_Type, "<");
 
@@ -205,7 +208,7 @@ package body Hera.Planets is
    is
    begin
       return Hera.Planets.Surfaces.Get_Surface (Tile.Planet.all)
-        .Serialize (Tile.Tile_Index);
+        .Serialize (Tile.Tile_Index, Surface_Map);
    end Serialize;
 
 end Hera.Planets;

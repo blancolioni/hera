@@ -1,11 +1,13 @@
 with WL.Heaps;
 with WL.String_Maps;
 
-with Hera.Color;
+with Hera.Color.Palettes;
 with Hera.Solar_System;
 
 with Hera.Colonies;
 with Hera.Planets.Surfaces.Generate;
+
+with Hera.Paths;
 
 package body Hera.Planets.Surfaces is
 
@@ -17,6 +19,12 @@ package body Hera.Planets.Surfaces is
    Map : Surface_Maps.Map;
 
    procedure Create_Surface (Planet : Root_Planet_Type'Class);
+
+   Have_Palettes : Boolean := False;
+
+   function Get_Palette
+     (Map : Surface_Map_Type)
+      return Hera.Color.Palettes.Palette_Type;
 
    --------------------
    -- Create_Surface --
@@ -96,6 +104,34 @@ package body Hera.Planets.Surfaces is
    end Find;
 
    -----------------
+   -- Get_Palette --
+   -----------------
+
+   function Get_Palette
+     (Map : Surface_Map_Type)
+      return Hera.Color.Palettes.Palette_Type
+   is
+   begin
+      if not Have_Palettes then
+         Hera.Color.Palettes.Load_Palette
+           (Surface_Map_Type'Image (Temperature_Map),
+            260.0, 300.0,
+            Hera.Paths.Config_File ("planets/world-temperature.bmp"));
+         Hera.Color.Palettes.Load_Palette
+           (Surface_Map_Type'Image (Elevation_Map),
+            0.0, 2500.0,
+            Hera.Paths.Config_File ("planets/world-temperature.bmp"));
+         Hera.Color.Palettes.Load_Palette
+           (Surface_Map_Type'Image (Habitability_Map),
+            0.0, 1.0,
+            Hera.Paths.Config_File ("planets/world-temperature.bmp"));
+         Have_Palettes := True;
+      end if;
+
+      return Hera.Color.Palettes.Get_Palette (Map'Image);
+   end Get_Palette;
+
+   -----------------
    -- Get_Surface --
    -----------------
 
@@ -132,11 +168,15 @@ package body Hera.Planets.Surfaces is
 
    function Serialize
      (Surface : Root_Surface_Type'Class;
-      Tile    : Hera.Surfaces.Surface_Tile_Index)
+      Tile    : Hera.Surfaces.Surface_Tile_Index;
+      Map     : Surface_Map_Type)
       return Hera.Json.Json_Object'Class
    is
       Sector : constant Hera.Sectors.Sector_Type :=
                  Surface.Sectors.Element (Tile);
+      Palette : constant Hera.Color.Palettes.Palette_Type :=
+                  Get_Palette (Map);
+
       Result : Hera.Json.Json_Object;
 
       function To_Json
@@ -176,26 +216,24 @@ package body Hera.Planets.Surfaces is
       declare
          use Hera.Colonies;
          Colony : constant Colony_Type := Get_By_Sector (Sector);
+         Parameter : constant Real :=
+                       (case Map is
+                           when Elevation_Map    =>
+                             Sector.Elevation,
+                           when Temperature_Map  =>
+                             Sector.Average_Temperature,
+                           when Habitability_Map =>
+                             Sector.Habitability);
       begin
          if Colony /= null then
-            Result.Set_Property ("color", "darkgrey");
-         elsif Surface.Sectors.Element (Tile).Terrain.Tag = "water" then
-            Result.Set_Property ("color", "blue");
-         else
-            declare
-               Relative_Height : constant Unit_Real :=
-                                   Unit_Clamp
-                                     (Sector.Elevation
-                                      / Hera.Sectors.Elevation_Range'Last);
-               Color           : constant Hera.Color.Hera_Color :=
-                                   (0.0,
-                                    0.25 + Relative_Height * 0.75, 0.0,
-                                    1.0);
-            begin
-               Result.Set_Property
-                 ("color", Hera.Color.To_Html_String (Color));
-            end;
+            Result.Set_Property ("colony", String (Colony.Identifier));
          end if;
+
+         Result.Set_Property
+           ("color",
+            Hera.Color.To_Html_String
+              (Hera.Color.Palettes.Get_Color
+                   (Palette, Parameter)));
       end;
 
       return Result;

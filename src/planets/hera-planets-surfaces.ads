@@ -7,6 +7,9 @@ with Hera.Sectors;
 
 private package Hera.Planets.Surfaces is
 
+   type Surface_Map_Type is
+     (Elevation_Map, Temperature_Map, Habitability_Map);
+
    type Root_Surface_Type is
      new Hera.Objects.Root_Hera_Object with private;
 
@@ -24,7 +27,8 @@ private package Hera.Planets.Surfaces is
 
    function Serialize
      (Surface : Root_Surface_Type'Class;
-      Tile    : Hera.Surfaces.Surface_Tile_Index)
+      Tile    : Hera.Surfaces.Surface_Tile_Index;
+      Map     : Surface_Map_Type)
       return Hera.Json.Json_Object'Class;
 
    type Surface_Type is access constant Root_Surface_Type'Class;
