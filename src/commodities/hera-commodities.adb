@@ -1,5 +1,3 @@
-with WL.String_Maps;
-
 package body Hera.Commodities is
 
    package Commodity_Maps is
@@ -161,13 +159,14 @@ package body Hera.Commodities is
       Commodity : Commodity_Type)
       return Stock_Entry
    is
+      Position : constant Stock_Item_Maps.Cursor :=
+        From.Map.Find (Commodity.Tag);
    begin
-      for Item of From.Stock loop
-         if Item.Commodity = Commodity then
-            return Item.Stock;
-         end if;
-      end loop;
-      return (Hera.Quantities.Zero, Hera.Money.Zero);
+      if Stock_Item_Maps.Has_Element (Position) then
+         return From.Stock (Stock_Item_Maps.Element (Position)).Stock;
+      else
+         return (Hera.Quantities.Zero, Hera.Money.Zero);
+      end if;
    end Get_Stock;
 
    ---------------------------
@@ -467,14 +466,15 @@ package body Hera.Commodities is
       Commodity : Commodity_Type;
       Stock     : Stock_Entry)
    is
+      Position : constant Stock_Item_Maps.Cursor :=
+        List.Map.Find (Commodity.Tag);
    begin
-      for Item of List.Stock loop
-         if Item.Commodity = Commodity then
-            Item.Stock := Stock;
-            return;
-         end if;
-      end loop;
-      List.Stock.Append ((Commodity, Stock));
+      if Stock_Item_Maps.Has_Element (Position) then
+         List.Stock (Stock_Item_Maps.Element (Position)).Stock := Stock;
+      else
+         List.Stock.Append ((Commodity, Stock));
+         List.Map.Insert (Commodity.Tag, List.Stock.Last);
+      end if;
    end Update_Stock;
 
 end Hera.Commodities;

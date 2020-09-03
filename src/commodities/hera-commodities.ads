@@ -1,4 +1,5 @@
 private with Ada.Containers.Doubly_Linked_Lists;
+private with WL.String_Maps;
 private with Tropos;
 
 with Hera.Identifiers;
@@ -269,12 +270,16 @@ private
    package Stock_Item_Lists is
      new Ada.Containers.Doubly_Linked_Lists (Stock_Item);
 
+   package Stock_Item_Maps is
+     new WL.String_Maps (Stock_Item_Lists.Cursor, Stock_Item_Lists."=");
+
    type Stock_List is
      new Has_Stock_Interface
      and Hera.Objects.Configured_Interface with
       record
          Id    : Hera.Identifiers.Object_Identifier;
          Stock : Stock_Item_Lists.List;
+         Map   : Stock_Item_Maps.Map;
       end record;
 
    overriding function Get_Stock
