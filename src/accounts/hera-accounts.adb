@@ -42,7 +42,7 @@ package body Hera.Accounts is
       Change      : Hera.Money.Money_Type);
 
    procedure Save_Transaction
-     (Map         : in out Transaction_Maps.Map;
+     (Map         : in out Transaction_Lists.List;
       Transaction : Transaction_Type);
 
    -----------------
@@ -99,7 +99,10 @@ package body Hera.Accounts is
       Account : Root_Account_Type'Class renames
         Root_Account_Type'Class (Target);
    begin
-      Save_Transaction (Account.Transactions, Update.Transaction);
+      if True then
+         Save_Transaction (Account.Transactions, Update.Transaction);
+      end if;
+
       Account.Cash := Account.Cash + Update.Change;
    end Execute;
 
@@ -114,14 +117,12 @@ package body Hera.Accounts is
    is
       use type Hera.Calendar.Time;
       use type Hera.Identifiers.Object_Identifier;
-      use Transaction_Maps;
-      Position : Cursor := Account.Transactions.Ceiling (From);
    begin
       return Summary : Transaction_Summary do
-         while Has_Element (Position)
-           and then Key (Position) <= To
-         loop
-            for Transaction of Element (Position) loop
+         for Transaction of Account.Transactions loop
+            if Transaction.Time >= From
+              and then Transaction.Time <= To
+            then
                if Summary.Map.Contains (Transaction.Class_Name) then
                   declare
                      Amount : Hera.Money.Money_Type renames
@@ -140,8 +141,7 @@ package body Hera.Accounts is
                       then Hera.Money.Zero - Transaction.Amount
                       else Transaction.Amount));
                end if;
-            end loop;
-            Next (Position);
+            end if;
          end loop;
       end return;
    end Get_Transaction_Summary;
@@ -188,10 +188,8 @@ package body Hera.Accounts is
         procedure (Transaction : Transaction_Type))
    is
    begin
-      for List of Account.Transactions loop
-         for Transaction of List loop
-            Process (Transaction);
-         end loop;
+      for Transaction of Account.Transactions loop
+         Process (Transaction);
       end loop;
    end Iterate_Transactions;
 
@@ -226,7 +224,7 @@ package body Hera.Accounts is
         (Hera.Objects.Root_Hera_Object with
          Name         => Ada.Strings.Unbounded.To_Unbounded_String (Name),
          Cash         => Start_Cash,
-         Transactions => Transaction_Maps.Empty_Map);
+         Transactions => Transaction_Lists.Empty_List);
    begin
       return Account : constant Account_Type :=
         Account_Type (Account_Object.New_Object (Account_Version))
@@ -245,6 +243,7 @@ package body Hera.Accounts is
       Amount      : Hera.Money.Money_Type)
    is
    begin
+      Transaction.Time := Hera.Calendar.Clock;
       Transaction.From := From;
       Transaction.To   := To;
       Transaction.Amount := Amount;
@@ -255,16 +254,11 @@ package body Hera.Accounts is
    ----------------------
 
    procedure Save_Transaction
-     (Map         : in out Transaction_Maps.Map;
+     (Map         : in out Transaction_Lists.List;
       Transaction : Transaction_Type)
    is
-      Key : constant Hera.Calendar.Time := Hera.Calendar.Clock;
    begin
-      if not Map.Contains (Key) then
-         Map.Insert (Key, Transaction_Lists.Empty_List);
-      end if;
-
-      Map (Key).Append (Transaction);
+      Map.Append (Transaction);
    end Save_Transaction;
 
    ---------------

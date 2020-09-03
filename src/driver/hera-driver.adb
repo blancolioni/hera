@@ -89,52 +89,54 @@ begin
                Process.Tick;
             end loop;
 
-            declare
-               procedure Log_Status
-                 (Corporation : Hera.Corporations.Corporation_Type);
+            if False then
+               declare
+                  procedure Log_Status
+                    (Corporation : Hera.Corporations.Corporation_Type);
 
-               ----------------
-               -- Log_Status --
-               ----------------
+                  ----------------
+                  -- Log_Status --
+                  ----------------
 
-               procedure Log_Status
-                 (Corporation : Hera.Corporations.Corporation_Type)
-               is
-
-                  use Hera.Calendar;
-
-                  procedure Log_Transaction_Class
-                    (Name : String;
-                     Amount : Hera.Money.Money_Type);
-
-                  ---------------------------
-                  -- Log_Transaction_Class --
-                  ---------------------------
-
-                  procedure Log_Transaction_Class
-                    (Name   : String;
-                     Amount : Hera.Money.Money_Type)
+                  procedure Log_Status
+                    (Corporation : Hera.Corporations.Corporation_Type)
                   is
+
+                     use Hera.Calendar;
+
+                     procedure Log_Transaction_Class
+                       (Name : String;
+                        Amount : Hera.Money.Money_Type);
+
+                     ---------------------------
+                     -- Log_Transaction_Class --
+                     ---------------------------
+
+                     procedure Log_Transaction_Class
+                       (Name   : String;
+                        Amount : Hera.Money.Money_Type)
+                     is
+                     begin
+                        Corporation.Log
+                          (Name & " " & Hera.Money.Show (Amount));
+                     end Log_Transaction_Class;
+
+                     Books : constant Hera.Accounts.Transaction_Summary :=
+                       Corporation.Account.Get_Transaction_Summary
+                         (From => Clock - Days (1),
+                          To   => Clock - 1.0);
                   begin
+                     Hera.Accounts.Iterate
+                       (Books, Log_Transaction_Class'Access);
+
                      Corporation.Log
-                     (Name & " " & Hera.Money.Show (Amount));
-                  end Log_Transaction_Class;
+                       ("cash: " & Hera.Money.Show (Corporation.Cash));
+                  end Log_Status;
 
-                  Books : constant Hera.Accounts.Transaction_Summary :=
-                    Corporation.Account.Get_Transaction_Summary
-                      (From => Clock - Days (1),
-                       To   => Clock - 1.0);
                begin
-                  Hera.Accounts.Iterate
-                    (Books, Log_Transaction_Class'Access);
-
-                  Corporation.Log
-                    ("cash: " & Hera.Money.Show (Corporation.Cash));
-               end Log_Status;
-
-            begin
-               Hera.Corporations.Iterate (Log_Status'Access);
-            end;
+                  Hera.Corporations.Iterate (Log_Status'Access);
+               end;
+            end if;
 
          end loop;
 

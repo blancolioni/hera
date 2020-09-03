@@ -1,5 +1,4 @@
 private with Ada.Containers.Doubly_Linked_Lists;
-private with Ada.Containers.Ordered_Maps;
 private with Ada.Strings.Unbounded;
 private with WL.String_Maps;
 
@@ -112,6 +111,7 @@ private
 
    type Root_Transaction_Type is abstract tagged
       record
+         Time   : Hera.Calendar.Time;
          Amount : Hera.Money.Money_Type;
          From   : Account_Type;
          To     : Account_Type;
@@ -125,19 +125,12 @@ private
    package Transaction_Lists is
       new Ada.Containers.Doubly_Linked_Lists (Transaction_Type);
 
-   package Transaction_Maps is
-     new Ada.Containers.Ordered_Maps
-       (Hera.Calendar.Time,
-        Transaction_Lists.List,
-        Hera.Calendar."<",
-        Transaction_Lists."=");
-
    type Root_Account_Type is
      new Hera.Objects.Root_Hera_Object with
       record
          Name         : Ada.Strings.Unbounded.Unbounded_String;
          Cash         : Hera.Money.Money_Type;
-         Transactions : Transaction_Maps.Map;
+         Transactions : Transaction_Lists.List;
       end record;
 
    overriding function Log_Id
