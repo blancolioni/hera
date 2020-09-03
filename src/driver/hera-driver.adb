@@ -1,3 +1,4 @@
+with Ada.Calendar;
 with Ada.Directories;
 with Ada.Text_IO;
 
@@ -11,6 +12,7 @@ with Hera.Logging;
 with Hera.Options;
 with Hera.Paths;
 with Hera.Profiling;
+with Hera.Real_Images;
 
 with Hera.Calendar;
 with Hera.Money;
@@ -74,6 +76,7 @@ begin
          Process     : WL.Processes.Process_Type;
          Update_Days : constant Natural :=
            Hera.Options.Update_Count;
+         Start : constant Ada.Calendar.Time := Ada.Calendar.Clock;
       begin
          Process.Start_Bar ("Updating", Update_Days * 24, True);
 
@@ -136,6 +139,16 @@ begin
          end loop;
 
          Process.Finish;
+
+         declare
+            use Ada.Calendar;
+            Elapsed : constant Duration := Clock - Start;
+         begin
+            Ada.Text_IO.Put_Line
+              ("advanced" & Update_Days'Image & " days in "
+               & Hera.Real_Images.Approximate_Image
+                 (Real (Elapsed)) & "s");
+         end;
 
       end;
 
