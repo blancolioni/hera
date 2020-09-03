@@ -34,19 +34,20 @@ package body Hera.Sectors is
       for Deposit of Sector.Deposits loop
          if Deposit.Resource = Update.Resource then
             if Deposit.Quantity < Update.Quantity then
-               raise Constraint_Error with
-                 "cannot remove " & Hera.Quantities.Show (Update.Quantity)
-                 & " " & Update.Resource.Tag
-                 & " from sector " & String (Sector.Identifier)
-                 & " because there are only "
-                 & Hera.Quantities.Show (Deposit.Quantity);
+               Sector.Log
+                 ("cannot remove " & Hera.Quantities.Show (Update.Quantity)
+                  & " " & Update.Resource.Tag
+                  & " from sector " & String (Sector.Identifier)
+                  & " because there are only "
+                  & Hera.Quantities.Show (Deposit.Quantity));
+            else
+               Deposit.Quantity := Deposit.Quantity - Update.Quantity;
+               Sector.Log
+                 ("remove " & Hera.Quantities.Show (Update.Quantity)
+                  & " from " & Deposit.Resource.Tag
+                  & " deposit; "
+                  & Hera.Quantities.Show (Deposit.Quantity) & " remaining");
             end if;
-            Deposit.Quantity := Deposit.Quantity - Update.Quantity;
-            Sector.Log
-              ("remove " & Hera.Quantities.Show (Update.Quantity)
-               & " from " & Deposit.Resource.Tag
-               & " deposit; "
-               & Hera.Quantities.Show (Deposit.Quantity) & " remaining");
             return;
          end if;
       end loop;
